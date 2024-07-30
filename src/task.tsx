@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import localforage from 'localforage';
 
 // "Todo" 型の定義をコンポーネント外で行います
 type Todo = {
@@ -18,7 +17,14 @@ const Task: React.FC = () => {
   const [nextId, setNextId] = useState(1); // 次のTodoのIDを保持するステート
   const [filter, setFilter] = useState<Filter>('all'); // フィルタのステート
 
-  // todos ステートを更新する関数
+  // コンポーネントのマウント時にRails APIからデータを取得
+  useEffect(() => {
+    fetch("http://localhost:3001/api/v1/todos")
+      .then(response => response.json())
+      .then(data => setTodos(data));
+  }, []);
+
+  // 新しいTodoを作成する関数
   const handleSubmit = () => {
     if (!text) return;
 
@@ -30,8 +36,20 @@ const Task: React.FC = () => {
     };
 
     setTodos((prevTodos) => [newTodo, ...prevTodos]);
-    setNextId(nextId + 1);
-    setText('');
+
+    // Rails APIに新しいTodoを送信し、レスポンスをステートに追加する
+    fetch("http://localhost:3001/api/v1/todos", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(newTodo),
+    })
+      .then(response => response.json())
+      .then(data => setTodos([data, ...todos]));
+
+    setNextId(nextId + 1); // 次のTodoのIDをインクリメント
+    setText(''); // フォームの入力をクリア
   };
 
   // フィルタリングされたタスクリストを取得する関数
@@ -52,44 +70,48 @@ const Task: React.FC = () => {
     }
   };
 
+  // 特定のTodoのプロパティを更新する関数
   const handleTodo = <K extends keyof Todo, V extends Todo[K]>(
     id: number,
     key: K,
     value: V
   ) => {
-    setTodos((todos) => {
-      const newTodos = todos.map((todo) => {
-        if (todo.id === id) {
-          return { ...todo, [key]: value };
-        } else {
-          return todo;
-        }
+    const updatedTodos = todos.map(todo => 
+      todo.id === id ? { ...todo, [key]: value } : todo
+    );
+    
+    setTodos(updatedTodos);
+
+    const todo = updatedTodos.find(todo => todo.id === id);
+    if (todo) {
+      fetch(`http://localhost:3001/api/v1/todos/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(todo),
       });
-  
-      return newTodos;
-    });
+    }
   };
 
+  // フィルタを変更する関数
   const handleFilterChange = (filter: Filter) => {
     setFilter(filter);
   };
 
    // 物理的に削除する関数
-   const handleEmpty = () => {
-    setTodos((todos) => todos.filter((todo) => !todo.delete_flg));
+  const handleEmpty = () => {
+    const filteredTodos = todos.filter(todo => !todo.delete_flg);
+    const deletePromises = todos
+      .filter(todo => todo.delete_flg)
+      .map(todo => 
+        fetch(`http://localhost:3001/api/v1/todos/${todo.id}`, {
+          method: "DELETE",
+        })
+      );
+
+    Promise.all(deletePromises).then(() => setTodos(filteredTodos));
   };
-
-  // useEffect フックを使ってコンポーネントのマウント時にデータを取得
-    useEffect(() => {
-      localforage
-        .getItem("todo-20240622")
-        .then((values) => setTodos(values as Todo[]));
-    }, []);
-
-    // todos ステートが更新されるたびにデータを保存
-    useEffect(() => {
-      localforage.setItem("todo-20240622", todos);
-    }, [todos]);
 
   return (
     <div>
