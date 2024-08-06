@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { fetchTodos, createTodo, updateTodo, deleteTodo } from './api';
 
 // "Todo" 型の定義をコンポーネント外で行います
-type Todo = {
+export interface Todo {
   content: string;
   readonly id: number;
   completed: boolean;
   delete_flg: boolean;
-};
+}
 
 type Filter = 'all' | 'completed' | 'unchecked' | 'delete';
 
@@ -19,9 +20,7 @@ const Task: React.FC = () => {
 
   // コンポーネントのマウント時にRails APIからデータを取得
   useEffect(() => {
-    fetch("http://localhost:3001/api/v1/todos")
-      .then(response => response.json())
-      .then(data => setTodos(data));
+    fetchTodos().then(data => setTodos(data));
   }, []);
 
   // 新しいTodoを作成する関数
@@ -37,19 +36,11 @@ const Task: React.FC = () => {
 
     setTodos((prevTodos) => [newTodo, ...prevTodos]);
 
-    // Rails APIに新しいTodoを送信し、レスポンスをステートに追加する
-    fetch("http://localhost:3001/api/v1/todos", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(newTodo),
-    })
-      .then(response => response.json())
-      .then(data => setTodos([data, ...todos]));
-
-    setNextId(nextId + 1); // 次のTodoのIDをインクリメント
-    setText(''); // フォームの入力をクリア
+    createTodo(newTodo).then(data => {
+      setTodos([data, ...todos]);
+      setNextId(nextId + 1);
+      setText('');
+    });
   };
 
   // フィルタリングされたタスクリストを取得する関数
@@ -76,21 +67,15 @@ const Task: React.FC = () => {
     key: K,
     value: V
   ) => {
-    const updatedTodos = todos.map(todo => 
+    const updatedTodos = todos.map(todo =>
       todo.id === id ? { ...todo, [key]: value } : todo
     );
-    
+
     setTodos(updatedTodos);
 
     const todo = updatedTodos.find(todo => todo.id === id);
     if (todo) {
-      fetch(`http://localhost:3001/api/v1/todos/${id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(todo),
-      });
+      updateTodo(id, todo);
     }
   };
 
@@ -100,15 +85,11 @@ const Task: React.FC = () => {
   };
 
    // 物理的に削除する関数
-  const handleEmpty = () => {
+   const handleEmpty = () => {
     const filteredTodos = todos.filter(todo => !todo.delete_flg);
     const deletePromises = todos
       .filter(todo => todo.delete_flg)
-      .map(todo => 
-        fetch(`http://localhost:3001/api/v1/todos/${todo.id}`, {
-          method: "DELETE",
-        })
-      );
+      .map(todo => deleteTodo(todo.id));
 
     Promise.all(deletePromises).then(() => setTodos(filteredTodos));
   };
