@@ -8,7 +8,7 @@ body, html {
 }
 
 #root {
-  max-width: 1200px; /* 最大幅を1600pxに拡大 */
+  max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
   text-align: center;
@@ -52,13 +52,13 @@ button[type='submit']:hover {
 ul {
   list-style: none;
   padding: 0;
-  width: 100%; /* 幅を100%に設定 */
+  width: 100%;
 }
 
 li {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: flex-start;
   background: #f9f9f9;
   padding: 1em; /* パディングを大きく */
   margin: 1em 0; /* マージンを大きく */
@@ -66,6 +66,12 @@ li {
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* リストアイテムのシャドウを追加 */
   width: 100%; /* 幅を100%に設定 */
   box-sizing: border-box; /* パディングとボーダーを含む */
+}
+
+li .input-container {
+  display: flex;
+  width: 100%;
+  align-items: center;
 }
 
 li input[type='text'] {
@@ -85,21 +91,35 @@ li input[type='checkbox'] {
   transform: scale(1.5); /* チェックボックスを大きく */
 }
 
-li button {
-  padding: 0.3em 0.6em; 
+.delete-button, .toggle-button {
+  padding: 0.3em 0.6em;
   background-color: #dc3545;
   color: #fff;
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  width: 100px;
+  margin-left: 10px;
 }
 
-li button:hover {
+.delete-button:hover {
   background-color: #c82333;
 }
 
-button[disabled] {
-  background-color: #ccc;
-  cursor: not-allowed;
+.toggle-button {
+  background-color: blue;
+  color: #fff;
+  margin-left: 10px;
+}
+
+.toggle-button:hover {
+  background-color: #0056b3;
+}
+
+.drag-handle {
+  display: inline-block;
+  padding: 0.5em;
+  margin-right: 10px;
+  background: #ddd;
+  border-radius: 5px;
+  cursor: grab;
 }

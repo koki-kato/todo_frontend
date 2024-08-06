@@ -155,19 +155,37 @@ const Task: React.FC = () => {
                       ref={provided.innerRef}
                       {...provided.draggableProps}
                       {...provided.dragHandleProps}
+                      className="task-item"
                     >
-                      <input
-                        type="checkbox"
-                        disabled={todo.delete_flg}
-                        checked={todo.completed}
-                        onChange={() => handleTodo(todo.id, 'completed', !todo.completed)}
-                      />
-                      <input
-                        type="text"
-                        disabled={todo.completed || todo.delete_flg}
-                        value={todo.content}
-                        onChange={(e) => handleTodo(todo.id, 'content', e.target.value)}
-                      />
+                      <div className="input-container">
+                        <span
+                          {...provided.dragHandleProps}
+                          className="drag-handle"
+                        >⇅</span>
+                        <input
+                          type="checkbox"
+                          disabled={todo.delete_flg}
+                          checked={todo.completed}
+                          onChange={() => handleTodo(todo.id, 'completed', !todo.completed)}
+                          style={{ marginRight: '10px' }}
+                        />
+                        <input
+                          type="text"
+                          disabled={todo.completed || todo.delete_flg}
+                          value={todo.content}
+                          onChange={(e) => handleTodo(todo.id, 'content', e.target.value)}
+                          className="task-input"
+                        />
+                        <button className="delete-button" onClick={() => handleTodo(todo.id, 'delete_flg', !todo.delete_flg)}>
+                          {todo.delete_flg ? '復元' : '削除'}
+                        </button>
+                        <button 
+                          className="toggle-button" 
+                          onClick={() => toggleSubContent(todo.id)}
+                        >
+                          ⏬
+                        </button>
+                      </div>
                       {showSubContent === todo.id && (
                         <textarea
                           value={todo.sub_content || ''}
@@ -175,15 +193,6 @@ const Task: React.FC = () => {
                           style={{ width: '100%', height: '100px', marginTop: '10px' }} // 大きなテキストエリア
                         />
                       )}
-                      <button onClick={() => handleTodo(todo.id, 'delete_flg', !todo.delete_flg)}>
-                        {todo.delete_flg ? '復元' : '削除'}
-                      </button>
-                      <button 
-                        onClick={() => toggleSubContent(todo.id)}
-                        style={{ color: 'blue' }}
-                      >
-                        ↓
-                      </button>
                     </li>
                   )}
                 </Draggable>
