@@ -1,11 +1,18 @@
-import Task from './task'; // Taskコンポーネントをインポート
+// src/App.tsx
+import React from 'react';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import Calendar from './Calendar';
+import Task from './task';
 
-function App() {
+const App: React.FC = () => {
   return (
-    <>
-      <Task /> {/* Taskコンポーネントをレンダリング */}
-    </>
+    <Router>
+      <Routes>
+        <Route path="/todos/:date" element={<Task />} />
+        <Route path="/" element={<Calendar />} />
+      </Routes>
+    </Router>
   );
-}
+};
 
 export default App;

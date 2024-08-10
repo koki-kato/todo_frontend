@@ -106,7 +106,7 @@ li input[type='checkbox'] {
 }
 
 .toggle-button {
-  background-color: blue;
+  background-color: white;
   color: #fff;
   margin-left: 10px;
 }
@@ -122,4 +122,37 @@ li input[type='checkbox'] {
   background: #ddd;
   border-radius: 5px;
   cursor: grab;
+}
+
+/* カレンダーのスタイル */
+.fc {
+  background-color: white; /* 背景色を白に */
+  border: 1px solid black; /* 黒い枠線を追加 */
+  width: 100%; /* 幅を100%に設定 */
+}
+
+.fc-h-event .fc-event-title {
+  display: inline-block;
+  left: 0px;
+  font-size: 11px;
+  font-weight: 500;
+  max-width: 100%;
+  overflow: hidden;
+  right: 0px;
+  vertical-align: top;
+}
+
+.fc .fc-daygrid-day-frame {
+  max-height: 140px;
+  height: 140px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+  white-space: nowrap; /* イベントが折り返されないようにする */
+}
+
+.fc-event {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

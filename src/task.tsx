@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 import { fetchTodos, createTodo, updateTodo, deleteTodo } from './api';
+import { useParams, useNavigate } from 'react-router-dom';
 
 export interface Todo {
   content: string;
@@ -8,20 +9,23 @@ export interface Todo {
   completed: boolean;
   delete_flg: boolean;
   sort: number;
-  sub_content?: string; // sub_contentを追加
+  sub_content?: string;
+  output_date: string;
 }
 
 type Filter = 'all' | 'completed' | 'unchecked' | 'delete';
 
 const Task: React.FC = () => {
+  const { date } = useParams<{ date: string }>();
+  const navigate = useNavigate(); // navigateフックを使用
   const [todos, setTodos] = useState<Todo[]>([]);
   const [text, setText] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
   const [showSubContent, setShowSubContent] = useState<number | null>(null);
 
   useEffect(() => {
-    fetchTodos().then(data => setTodos(data));
-  }, []);
+    fetchTodos().then(data => setTodos(data.filter(todo => todo.output_date === date)));
+  }, [date]);
 
   const handleSubmit = () => {
     if (!text) return;
@@ -31,12 +35,30 @@ const Task: React.FC = () => {
       completed: false,
       delete_flg: false,
       sort: todos.length + 1,
-      sub_content: '', // sub_contentを初期化
+      output_date: date || '', // デフォルト値を設定
+      sub_content: '',
     };
 
     createTodo(newTodo).then(data => {
       setTodos(prevTodos => [...prevTodos, data]);
       setText('');
+    });
+  };
+
+  const handleDuplicate = (todo: Todo, index: number) => {
+    const newTodo: Omit<Todo, 'id'> = {
+      content: `コピー_${todo.content}`,
+      completed: todo.completed,
+      delete_flg: todo.delete_flg,
+      sort: todo.sort + 0.5, // 新しいタスクが元のタスクの直後に来るようにsortを調整
+      output_date: todo.output_date,
+      sub_content: todo.sub_content,
+    };
+
+    createTodo(newTodo).then(data => {
+      const updatedTodos = [...todos];
+      updatedTodos.splice(index + 1, 0, data); // 複製したタスクを元のタスクの次に挿入
+      setTodos(updatedTodos);
     });
   };
 
@@ -111,8 +133,14 @@ const Task: React.FC = () => {
     setShowSubContent(prevId => (prevId === id ? null : id));
   };
 
+  const handleBackToCalendar = () => {
+    navigate('/'); // カレンダー画面に遷移
+  };
+
   return (
     <div>
+      <button onClick={handleBackToCalendar}>カレンダーに戻る</button>
+      <h1>{date && new Date(date).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })}</h1>
       <select
         defaultValue="all"
         onChange={(e) => handleFilterChange(e.target.value as Filter)}
@@ -184,6 +212,12 @@ const Task: React.FC = () => {
                           onClick={() => toggleSubContent(todo.id)}
                         >
                           ⏬
+                        </button>
+                        <button 
+                          className="duplicate-button"
+                          onClick={() => handleDuplicate(todo, index)}
+                        >
+                          複製
                         </button>
                       </div>
                       {showSubContent === todo.id && (
