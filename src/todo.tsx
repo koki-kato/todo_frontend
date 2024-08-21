@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import localforage from 'localforage';
 
 
 // "Todo" 型の定義をコンポーネント外で行います
@@ -69,59 +70,61 @@ const Todo: React.FC = () => {
     setText('');
   };
 
-  const handleEdit = (id: number, value: string) => {
-    setTodos((todos) => {
-      const newTodos = todos.map((todo) => {
-        if (todo.id === id) {
-          // 新しいオブジェクトを作成して返す
-          return { ...todo, content: value };
-        }
-        return todo;
-      });
-  
-  
-      // todos ステートが書き換えられていないかチェック
-      console.log('=== Original todos ===');
-      todos.map((todo) => {
-        console.log(`id: ${todo.id}, content: ${todo.content}`);
-      });
-  
-  
-      return newTodos;
-    });
-  };
+  // // 共通の更新関数を使用したイベント処理関数
+  // const handleEdit = (id: number, value: string) => {
+  //   setTodos((todos) => updateTodo(todos, id, 'content', value));
+  // };
 
-  const handleCheck = (id: number, completed_flg: boolean) => {
-    setTodos((todos) => {
-      const newTodos = todos.map((todo) => {
-        if (todo.id === id) {
-          return { ...todo, completed_flg };
-        }
-        return todo;
-      });
+  // const handleCheck = (id: number, completed_flg: boolean) => {
+  //   setTodos((todos) => updateTodo(todos, id, 'completed_flg', completed_flg));
+  // };
 
-      return newTodos;
-    });
-  };
-
-  const handleRemove = (id: number, delete_flg: boolean) => {
-    setTodos((todos) => {
-      const newTodos = todos.map((todo) => {
-        if (todo.id === id) {
-          return { ...todo, delete_flg };
-        }
-        return todo;
-      });
-
-
-      return newTodos;
-    });
-  };
+  // const handleRemove = (id: number, delete_flg: boolean) => {
+  //   setTodos((todos) => updateTodo(todos, id, 'delete_flg', delete_flg));
+  // };
 
   // 物理的に削除する関数
   const handleEmpty = () => {
     setTodos((todos) => todos.filter((todo) => !todo.delete_flg));
   };
+
+  const handleTodo = <K extends keyof Todo, V extends Todo[K]>(
+    id: number,
+    key: K,
+    value: V
+  ) => {
+    setTodos((todos) => {
+      const newTodos = todos.map((todo) => {
+        if (todo.id === id) {
+          return { ...todo, [key]: value };
+        } else {
+          return todo;
+        }
+      });
+  
+      return newTodos;
+    });
+  };
+
+  useEffect(() => {
+    // ここに副作用の処理を書く
+    console.log('TODO!');
+  }, []);
+
+  // useEffect フックを使って todos ステートが更新されるたびにデータを保存
+  useEffect(() => {
+    localforage.getItem('todo-20240622').then((values) => {
+      if (values) {
+        setTodos(values as Todo[]);
+      }
+    });
+  }, []);
+
+
+  // useEffect フックを使ってコンポーネントのマウント時にデータを取得
+  useEffect(() => {
+    localforage.setItem('todo-20240622', todos);
+  }, [todos]);
 
   return (
     <div className="todo-container">
@@ -162,15 +165,17 @@ const Todo: React.FC = () => {
           <li key={todo.id}>
             <input
               type="checkbox"
+              disabled={todo.delete_flg}
               checked={todo.completed_flg}
-              onChange={() => handleCheck(todo.id, !todo.completed_flg)}
+              onChange={() => handleTodo(todo.id, 'completed_flg', !todo.completed_flg)}
             />
             <input
               type="text"
+              disabled={todo.completed_flg || todo.delete_flg}
               value={todo.content}
-              onChange={(e) => handleEdit(todo.id, e.target.value)}
+              onChange={(e) => handleTodo(todo.id, 'content', e.target.value)}
             />
-            <button onClick={() => handleRemove(todo.id, !todo.delete_flg)}>
+            <button onClick={() => handleTodo(todo.id, 'delete_flg', !todo.delete_flg)}>
               {todo.delete_flg ? '復元' : '削除'}
             </button>
           </li>

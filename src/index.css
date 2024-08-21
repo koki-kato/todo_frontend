@@ -1,29 +1,117 @@
-#root {
+/* 画面全体のスタイル */
+body, html {
+  height: 100%;
+  width: 100%;
   margin: 0;
-  padding: 0;
+  font-family: 'Arial', sans-serif;
+  background-color: #f0f0f0; /* 微妙なグレーの背景色 */
 }
 
-select {
-  margin: 0.5em;
-  padding: 0.5em;
+
+#root {
+  max-width: 1300px; /* 最大幅を1600pxに拡大 */
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
 }
 
-input[type='text'] {
-  width: 50vw;
-  padding: 0.5em;
-  margin: 0 0.5em;
+
+.todo-container {
+  background-color: #d3d3d3;
+  padding: 2em;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  width: 100%; /* 幅を100%に設定 */
+  max-width: 1200px; /* 最大幅を1200pxに設定 */
+  margin: 1em; /* 中央寄せ */
+  box-sizing: border-box; /* パディングとボーダーを含む */
 }
 
-input[type='submit'] {
-  padding: 0.1em 0.5em;
+
+select, input[type='text'], button[type='submit'] {
+  width: 95%;
+  margin: 0.5em 0;
+  padding: 0.75em; /* パディングを大きく */
+  font-size: 1.2em; /* フォントサイズを大きく */
+  border: 1px solid #ccc;
+  border-radius: 5px;
 }
+
+
+button[type='submit'] {
+  background-color: #007BFF;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  height: 45px;
+  width: 35%;
+  font-size: 1.2em;
+  padding: 0.5em 1em;
+}
+
+
+button[type='submit']:hover {
+  background-color: #0056b3;
+}
+
 
 ul {
   list-style: none;
-  margin-left: 0.5em;
-  padding-left: 0;
+  padding: 0;
+  width: 100%; /* 幅を100%に設定 */
 }
 
+
 li {
-  margin-bottom: 0.5em;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f9f9f9;/* 背景色を白に設定 */
+  padding: 1em; /* パディングを大きく */
+  margin: 1em 0; /* マージンを大きく */
+  border-radius: 5px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* リストアイテムのシャドウを追加 */
+  width: 100%; /* 幅を100%に設定 */
+  box-sizing: border-box; /* パディングとボーダーを含む */
+}
+
+
+li input[type='text'] {
+  flex-grow: 1;
+  margin-right: 1em;
+  border: 1px solid #ccc; /* ボーダーを追加 */
+  border-radius: 5px; /* ボーダーの角を丸く */
+  background: #fff; /* 背景色を白に設定 */
+  outline: none;
+  font-size: 1.2em; /* フォントサイズを大きく */
+  padding: 0.5em; /* パディングを追加 */
+  box-sizing: border-box; /* パディングとボーダーを含む */
+}
+
+
+li input[type='checkbox'] {
+  margin-right: 1em;
+  transform: scale(1.5); /* チェックボックスを大きく */
+}
+
+
+li button {
+  padding: 0.3em 0.6em; 
+  background-color: #dc3545;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  width: 100px;
+}
+
+
+li button:hover {
+  background-color: #c82333;
+}
+
+
+button[disabled] {
+  background-color: #ccc;
+  cursor: not-allowed;
 }
