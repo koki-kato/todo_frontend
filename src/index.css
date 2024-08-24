@@ -74,6 +74,25 @@ li .input-container {
   align-items: center;
 }
 
+/* タスクのタイトルを整える*/
+.div-container {
+  display: flex;
+  margin-right: 5px;
+  flex-direction: column;
+  gap: 1px; /* ラベルと入力フィールドの間にスペースを設ける */
+}
+
+.date-container label {
+  font-size: 10px;
+}
+
+.date-container input[type='date'] {
+  width: 90px; /* 日付入力フィールドの幅を調整 */
+  padding: 5px;
+  height: 10px;
+  font-size: 14px;
+}
+
 li input[type='text'] {
   flex-grow: 1;
   margin-right: 1em;
@@ -81,6 +100,7 @@ li input[type='text'] {
   border-radius: 5px; /* ボーダーの角を丸く */
   background: #fff; /* 背景色を白に設定 */
   outline: none;
+  width: 70%;
   font-size: 1.2em; /* フォントサイズを大きく */
   padding: 0.5em; /* パディングを追加 */
   box-sizing: border-box; /* パディングとボーダーを含む */
@@ -98,8 +118,7 @@ li input[type='checkbox'] {
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  margin-left: 10px;
-  width: 65px;
+  width: 70px;
 }
 
 .delete-button:hover {

@@ -17,8 +17,11 @@ export interface Todo {
   sort: number;
   sub_content?: string;
   output_date: string;
-  progress_rate: number; // progress_rate を追加
+  progress_rate: number;
+  start_date: string; // 新しい開始日
+  completion_date: string; // 新しい完了予定日
 }
+
 
 type Filter = 'all' | 'completed' | 'unchecked' | 'delete';
 
@@ -47,6 +50,8 @@ const Task: React.FC = () => {
       output_date: date || '',
       sub_content: '',
       progress_rate: 0, // 初期値として0%を設定
+      start_date: '', // 新しい開始日
+      completion_date: '', // 新しい完了予定日
     };
     
     createTodo(newTodo).then(data => {
@@ -78,6 +83,8 @@ const handleDateSelect = (selectedDate: string) => {
                 output_date: selectedDate,
                 sub_content: todo.sub_content,
                 progress_rate: todo.progress_rate, 
+                start_date: todo.start_date, // 新しい開始日
+                completion_date: todo.completion_date, // 新しい完了予定日
             };
             return createTodo(newTodo);
         }
@@ -228,54 +235,77 @@ const handleDateSelect = (selectedDate: string) => {
                 <Draggable key={todo.id} draggableId={todo.id.toString()} index={index}>
                   {(provided) => (
                     <li
-                    ref={provided.innerRef}
-                    {...provided.draggableProps}
-                    {...provided.dragHandleProps}
-                    className="task-item"
-                  >
-                    <div className="input-container">
-                      <span {...provided.dragHandleProps} className="drag-handle">⇅</span>
-                      <select
-                        value={todo.progress_rate || 0}
-                        onChange={(e) => handleProgressChange(todo.id, Number(e.target.value))}
-                        disabled={todo.delete_flg}
-                        style={{ fontSize: '14px', width: '79px', marginRight: '10px' }} // セレクトボックスの幅を狭める
-                      >
-                        {[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map(rate => (
-                          <option key={rate} value={rate}>{rate}%</option>
-                        ))}
-                      </select>
-                      <input
-                        type="text"
-                        disabled={todo.completed || todo.delete_flg}
-                        value={todo.content}
-                        onChange={(e) => handleTodo(todo.id, 'content', e.target.value)}
-                        className="task-input"
-                        style={{
-                          backgroundColor: todo.completed && todo.progress_rate === 100 ? '#d3d3d3' : '',
-                          color: todo.completed && todo.progress_rate === 100 ? '#808080' : '',
-                        }}
-                      />
-                      <button className="delete-button" onClick={() => handleTodo(todo.id, 'delete_flg', !todo.delete_flg)}>
-                        {todo.delete_flg ? '復元' : '削除'}
-                      </button>
-                      <button className="toggle-button" onClick={() => toggleSubContent(todo.id)}>
-                        ⏬
-                      </button>
-                      <input
-                        type="checkbox"
-                        onChange={() => handleCheckboxChange(todo.id)}
-                        style={{ marginRight: '10px' }}
-                      />
-                    </div>
-                    {showSubContent === todo.id && (
-                      <textarea
-                        value={todo.sub_content || ''}
-                        onChange={(e) => handleTodo(todo.id, 'sub_content', e.target.value)}
-                        style={{ fontSize: '16px', width: '100%', height: '100px', marginTop: '10px' }} // 大きなテキストエリア
-                      />
-                    )}
-                  </li>
+                      ref={provided.innerRef}
+                      {...provided.draggableProps}
+                      {...provided.dragHandleProps}
+                      className="task-item"
+                    >
+                      <div className="input-container">
+                        <span {...provided.dragHandleProps} className="drag-handle">⇅</span>
+                        <div className="div-container">
+                          <label htmlFor={`progress-rate-${todo.id}`} style={{ fontSize: '12px' }}>進捗率</label>
+                          <select
+                            value={todo.progress_rate || 0}
+                            onChange={(e) => handleProgressChange(todo.id, Number(e.target.value))}
+                            disabled={todo.delete_flg}
+                          style={{ fontSize: '14px', width: '79px', marginBottom: '17px', marginTop: '-0.5px' }}
+                          >
+                            {[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map(rate => (
+                              <option key={rate} value={rate}>{rate}%</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="div-container">
+                          <label htmlFor={`start-date-${todo.id}`} style={{ fontSize: '12px' }}>開始日</label>
+                          <input
+                            type="date"
+                            id={`start-date-${todo.id}`}
+                            value={todo.start_date}
+                            onChange={(e) => handleTodo(todo.id, 'start_date', e.target.value)}
+                          />
+                          <label htmlFor={`completion-date-${todo.id}`} style={{ fontSize: '12px' }}>完了予定日</label>
+                          <input
+                            type="date"
+                            id={`completion-date-${todo.id}`}
+                            value={todo.completion_date}
+                            onChange={(e) => handleTodo(todo.id, 'completion_date', e.target.value)}
+                            style={{ marginBottom: '12px' }}
+                          />
+                        </div>
+                        <input
+                          type="text"
+                          disabled={todo.completed || todo.delete_flg}
+                          value={todo.content}
+                          onChange={(e) => handleTodo(todo.id, 'content', e.target.value)}
+                          className="task-input"
+                          style={{
+                            backgroundColor: todo.completed && todo.progress_rate === 100 ? '#d3d3d3' : '',
+                            color: todo.completed && todo.progress_rate === 100 ? '#808080' : '',
+                          }}
+                        />
+                        <button className="delete-button" onClick={() => handleTodo(todo.id, 'delete_flg', !todo.delete_flg)}>
+                          {todo.delete_flg ? '復元' : '削除'}
+                        </button>
+                        <button className="toggle-button" onClick={() => toggleSubContent(todo.id)}>
+                          ⏬
+                        </button>
+                        <div className="div-container">
+                          <label style={{ fontSize: '12px', display: 'block', marginBottom: '3px', width: '80px' }}>複製チェック</label>
+                          <input
+                            type="checkbox"
+                            onChange={() => handleCheckboxChange(todo.id)}
+                            style={{ marginRight: '10px', marginBottom: '20px' }}
+                          />
+                        </div>
+                      </div>
+                      {showSubContent === todo.id && (
+                        <textarea
+                          value={todo.sub_content || ''}
+                          onChange={(e) => handleTodo(todo.id, 'sub_content', e.target.value)}
+                          style={{ fontSize: '16px', width: '100%', height: '100px', marginTop: '10px' }}
+                        />
+                      )}
+                    </li>
                   )}
                 </Draggable>
               ))}
@@ -290,21 +320,21 @@ const handleDateSelect = (selectedDate: string) => {
         isOpen={isCalendarOpen}
         onRequestClose={() => setIsCalendarOpen(false)}
         contentLabel="カレンダーを選択"
-        ariaHideApp={false} // アクセシビリティのために追加
+        ariaHideApp={false}
       >
         <h2>日付を選択してください</h2>
         <FullCalendar
           plugins={[dayGridPlugin, interactionPlugin]}
           initialView="dayGridMonth"
-          events={filteredCalendarEvents}  // 全タスクをイベントとして表示
+          events={filteredCalendarEvents}
           editable={true}
           selectable={true}
-          dateClick={(arg) => handleDateSelect(arg.dateStr)}  // 日付を選択したときにタスクを複製
+          dateClick={(arg) => handleDateSelect(arg.dateStr)}
         />
         <button onClick={() => setIsCalendarOpen(false)}>キャンセル</button>
       </Modal>
     </div>
-  );
+  );  
 };
 
 export default Task;
