@@ -15,6 +15,7 @@ export interface Todo {
   sort: number;
   sub_content?: string;
   output_date: string;
+  progress_rate: number; // progress_rate を追加
 }
 
 type Filter = 'all' | 'completed' | 'unchecked' | 'delete';
@@ -43,8 +44,9 @@ const Task: React.FC = () => {
       sort: todos.length + 1,
       output_date: date || '',
       sub_content: '',
+      progress_rate: 0, // 初期値として0%を設定
     };
-
+    
     createTodo(newTodo).then(data => {
       setTodos(prevTodos => [...prevTodos, data]);
       setText('');
@@ -73,6 +75,7 @@ const handleDateSelect = (selectedDate: string) => {
                 sort: todo.sort + 1,
                 output_date: selectedDate,
                 sub_content: todo.sub_content,
+                progress_rate: todo.progress_rate, 
             };
             return createTodo(newTodo);
         }
@@ -118,6 +121,21 @@ const handleDateSelect = (selectedDate: string) => {
     const todo = updatedTodos.find(todo => todo.id === id);
     if (todo) {
       updateTodo(id, todo);
+    }
+  };
+
+  const handleProgressChange = (id: number, newProgress: number) => {
+    setTodos(prevTodos =>
+      prevTodos.map(todo =>
+        todo.id === id
+          ? { ...todo, progress_rate: newProgress, completed: newProgress === 100 }
+          : todo
+      )
+    );
+
+    const updatedTodo = todos.find(todo => todo.id === id);
+    if (updatedTodo) {
+      updateTodo(id, { ...updatedTodo, progress_rate: newProgress, completed: newProgress === 100 });
     }
   };
 
@@ -220,53 +238,50 @@ const handleDateSelect = (selectedDate: string) => {
                 <Draggable key={todo.id} draggableId={todo.id.toString()} index={index}>
                   {(provided) => (
                     <li
-                      ref={provided.innerRef}
-                      {...provided.draggableProps}
-                      {...provided.dragHandleProps}
-                      className="task-item"
-                    >
-                      <div className="input-container">
-                        <span
-                          {...provided.dragHandleProps}
-                          className="drag-handle"
-                        >⇅</span>
-                        <input
-                          type="checkbox"
-                          disabled={todo.delete_flg}
-                          checked={todo.completed}
-                          onChange={() => handleTodo(todo.id, 'completed', !todo.completed)}
-                          style={{ marginRight: '10px' }}
-                        />
-                        <input
-                          type="text"
-                          disabled={todo.completed || todo.delete_flg}
-                          value={todo.content}
-                          onChange={(e) => handleTodo(todo.id, 'content', e.target.value)}
-                          className="task-input"
-                        />
-                        <button className="delete-button" onClick={() => handleTodo(todo.id, 'delete_flg', !todo.delete_flg)}>
-                          {todo.delete_flg ? '復元' : '削除'}
-                        </button>
-                        <button 
-                          className="toggle-button" 
-                          onClick={() => toggleSubContent(todo.id)}
-                        >
-                          ⏬
-                        </button>
-                        <input
-                          type="checkbox"
-                          onChange={() => handleCheckboxChange(todo.id)}
-                          style={{ marginRight: '10px' }}
-                        />
-                      </div>
-                      {showSubContent === todo.id && (
-                        <textarea
-                          value={todo.sub_content || ''}
-                          onChange={(e) => handleTodo(todo.id, 'sub_content', e.target.value)}
-                          style={{ fontSize: '16px', width: '100%', height: '100px', marginTop: '10px' }} // 大きなテキストエリア
-                        />
-                      )}
-                    </li>
+                    ref={provided.innerRef}
+                    {...provided.draggableProps}
+                    {...provided.dragHandleProps}
+                    className="task-item"
+                  >
+                    <div className="input-container">
+                      <span {...provided.dragHandleProps} className="drag-handle">⇅</span>
+                      <select
+                        value={todo.progress_rate || 0}
+                        onChange={(e) => handleProgressChange(todo.id, Number(e.target.value))}
+                        disabled={todo.delete_flg}
+                        style={{ fontSize: '14px', width: '70px', marginRight: '10px' }} // セレクトボックスの幅を狭める
+                      >
+                        {[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map(rate => (
+                          <option key={rate} value={rate}>{rate}%</option>
+                        ))}
+                      </select>
+                      <input
+                        type="text"
+                        disabled={todo.completed || todo.delete_flg}
+                        value={todo.content}
+                        onChange={(e) => handleTodo(todo.id, 'content', e.target.value)}
+                        className="task-input"
+                      />
+                      <button className="delete-button" onClick={() => handleTodo(todo.id, 'delete_flg', !todo.delete_flg)}>
+                        {todo.delete_flg ? '復元' : '削除'}
+                      </button>
+                      <button className="toggle-button" onClick={() => toggleSubContent(todo.id)}>
+                        ⏬
+                      </button>
+                      <input
+                        type="checkbox"
+                        onChange={() => handleCheckboxChange(todo.id)}
+                        style={{ marginRight: '10px' }}
+                      />
+                    </div>
+                    {showSubContent === todo.id && (
+                      <textarea
+                        value={todo.sub_content || ''}
+                        onChange={(e) => handleTodo(todo.id, 'sub_content', e.target.value)}
+                        style={{ fontSize: '16px', width: '100%', height: '100px', marginTop: '10px' }} // 大きなテキストエリア
+                      />
+                    )}
+                  </li>
                   )}
                 </Draggable>
               ))}
