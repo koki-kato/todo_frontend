@@ -6,6 +6,8 @@ import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import Modal from 'react-modal';
+import Filter from './components/Filter'; 
+
 
 export interface Todo {
   content: string;
@@ -139,10 +141,6 @@ const handleDateSelect = (selectedDate: string) => {
     }
   };
 
-  const handleFilterChange = (filter: Filter) => {
-    setFilter(filter);
-  };
-
   const handleEmpty = () => {
     const filteredTodos = todos.filter(todo => !todo.delete_flg);
     const deletePromises = todos
@@ -192,15 +190,7 @@ const handleDateSelect = (selectedDate: string) => {
     <div>
       <h1>{date && new Date(date).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })}</h1>
       <button onClick={handleBackToCalendar}>カレンダーに戻る</button>
-      <select
-        defaultValue="all"
-        onChange={(e) => handleFilterChange(e.target.value as Filter)}
-      >
-        <option value="all">すべてのタスク</option>
-        <option value="completed">完了したタスク</option>
-        <option value="unchecked">現在のタスク</option>
-        <option value="delete">ごみ箱</option>
-      </select>
+      <Filter filter={filter} onChange={setFilter} />
       {filter === 'delete' ? (
         <button onClick={handleEmpty}>ごみ箱を空にする</button>
       ) : (
@@ -249,7 +239,7 @@ const handleDateSelect = (selectedDate: string) => {
                         value={todo.progress_rate || 0}
                         onChange={(e) => handleProgressChange(todo.id, Number(e.target.value))}
                         disabled={todo.delete_flg}
-                        style={{ fontSize: '14px', width: '70px', marginRight: '10px' }} // セレクトボックスの幅を狭める
+                        style={{ fontSize: '14px', width: '79px', marginRight: '10px' }} // セレクトボックスの幅を狭める
                       >
                         {[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map(rate => (
                           <option key={rate} value={rate}>{rate}%</option>
@@ -261,6 +251,10 @@ const handleDateSelect = (selectedDate: string) => {
                         value={todo.content}
                         onChange={(e) => handleTodo(todo.id, 'content', e.target.value)}
                         className="task-input"
+                        style={{
+                          backgroundColor: todo.completed && todo.progress_rate === 100 ? '#d3d3d3' : '',
+                          color: todo.completed && todo.progress_rate === 100 ? '#808080' : '',
+                        }}
                       />
                       <button className="delete-button" onClick={() => handleTodo(todo.id, 'delete_flg', !todo.delete_flg)}>
                         {todo.delete_flg ? '復元' : '削除'}
