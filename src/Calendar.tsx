@@ -22,12 +22,17 @@ const Calendar: React.FC = () => {
     navigate(`/todos/${arg.dateStr}`);
   };
 
-  const events = todos
-    .filter(todo => !todo.delete_flg) // delete_flgがtrueのものを除外
+  const calendarEvents = todos
+    .filter(todo => !todo.delete_flg)
+    .sort((a, b) => {
+      console.log('Comparing:', a.content, Number(a.sort), Number(b.sort)); // デバッグ用のログ
+      return Number(b.sort) - Number(a.sort);
+    })
     .map(todo => ({
       title: todo.content,
       date: todo.output_date,
       id: todo.id.toString(),
+      color: todo.completed ? 'green' : '',
     }));
 
   const handleEventDrop = (info: any) => {
@@ -50,7 +55,7 @@ const Calendar: React.FC = () => {
     <FullCalendar
       plugins={[dayGridPlugin, interactionPlugin]} // プラグインを設定
       initialView="dayGridMonth" // 初期表示を月表示に設定
-      events={events} // イベントのデータを設定
+      events={calendarEvents} // イベントのデータを設定
       dateClick={handleDateClick} // 日付をクリックしたときのハンドラ
       editable={true} // イベントの編集を有効にする
       eventDrop={handleEventDrop} // イベントをドラッグし終わったときのハンドラ

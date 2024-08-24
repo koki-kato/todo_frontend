@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 import { fetchTodos, createTodo, updateTodo, deleteTodo } from './api';
 import { useParams, useNavigate } from 'react-router-dom';
+import FullCalendar from '@fullcalendar/react';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import interactionPlugin from '@fullcalendar/interaction';
+import Modal from 'react-modal';
 
 export interface Todo {
   content: string;
@@ -17,15 +21,17 @@ type Filter = 'all' | 'completed' | 'unchecked' | 'delete';
 
 const Task: React.FC = () => {
   const { date } = useParams<{ date: string }>();
-  const navigate = useNavigate(); // navigateフックを使用
+  const navigate = useNavigate();
   const [todos, setTodos] = useState<Todo[]>([]);
   const [text, setText] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
+  const [selectedTodos, setSelectedTodos] = useState<number[]>([]);
   const [showSubContent, setShowSubContent] = useState<number | null>(null);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   useEffect(() => {
-    fetchTodos().then(data => setTodos(data.filter(todo => todo.output_date === date)));
-  }, [date]);
+    fetchTodos().then(data => setTodos(data)); // 全てのタスクを取得
+  }, []);
 
   const handleSubmit = () => {
     if (!text) return;
@@ -35,7 +41,7 @@ const Task: React.FC = () => {
       completed: false,
       delete_flg: false,
       sort: todos.length + 1,
-      output_date: date || '', // デフォルト値を設定
+      output_date: date || '',
       sub_content: '',
     };
 
@@ -45,37 +51,54 @@ const Task: React.FC = () => {
     });
   };
 
-  const handleDuplicate = (todo: Todo, index: number) => {
-    const newTodo: Omit<Todo, 'id'> = {
-      content: `コピー_${todo.content}`,
-      completed: todo.completed,
-      delete_flg: todo.delete_flg,
-      sort: todo.sort + 0.5, // 新しいタスクが元のタスクの直後に来るようにsortを調整
-      output_date: todo.output_date,
-      sub_content: todo.sub_content,
-    };
-
-    createTodo(newTodo).then(data => {
-      const updatedTodos = [...todos];
-      updatedTodos.splice(index + 1, 0, data); // 複製したタスクを元のタスクの次に挿入
-      setTodos(updatedTodos);
-    });
+  const handleCheckboxChange = (id: number) => {
+    setSelectedTodos(prev =>
+      prev.includes(id) ? prev.filter(todoId => todoId !== id) : [...prev, id]
+    );
   };
+
+  const handleDuplicateSelected = () => {
+    if (selectedTodos.length === 0) return;
+    setIsCalendarOpen(true);
+};
+
+const handleDateSelect = (selectedDate: string) => {
+    const duplicatePromises = selectedTodos.map(id => {
+        const todo = todos.find(todo => todo.id === id);
+        if (todo) {
+            const newTodo: Omit<Todo, 'id'> = {
+                content: todo.content,
+                completed: todo.completed,
+                delete_flg: todo.delete_flg,
+                sort: todo.sort + 1,
+                output_date: selectedDate,
+                sub_content: todo.sub_content,
+            };
+            return createTodo(newTodo);
+        }
+        return null;
+    });
+
+    Promise.all(duplicatePromises).then(() => {
+        setIsCalendarOpen(false);
+        setSelectedTodos([]);  // 複製が完了したら選択リストをクリア
+    });
+};
 
   const getFilteredTodos = () => {
     let filteredTodos = [];
     switch (filter) {
       case 'completed':
-        filteredTodos = todos.filter(todo => todo.completed && !todo.delete_flg);
+        filteredTodos = todos.filter(todo => todo.completed && !todo.delete_flg && todo.output_date === date);
         break;
       case 'unchecked':
-        filteredTodos = todos.filter(todo => !todo.completed && !todo.delete_flg);
+        filteredTodos = todos.filter(todo => !todo.completed && !todo.delete_flg && todo.output_date === date);
         break;
       case 'delete':
-        filteredTodos = todos.filter(todo => todo.delete_flg);
+        filteredTodos = todos.filter(todo => todo.delete_flg && todo.output_date === date);
         break;
       default:
-        filteredTodos = todos.filter(todo => !todo.delete_flg);
+        filteredTodos = todos.filter(todo => !todo.delete_flg && todo.output_date === date);
         break;
     }
     return filteredTodos.sort((a, b) => a.sort - b.sort);
@@ -134,13 +157,23 @@ const Task: React.FC = () => {
   };
 
   const handleBackToCalendar = () => {
-    navigate('/'); // カレンダー画面に遷移
+    navigate('/');
   };
+
+  // カレンダーに表示するイベントを作成
+  const calendarEvents = todos.map(todo => ({
+    title: todo.content,
+    date: todo.output_date,
+    delete_flg: todo.delete_flg,
+    id: todo.id.toString(),
+  }));
+
+  const filteredCalendarEvents = calendarEvents.filter(event => !event.delete_flg);
 
   return (
     <div>
-      <button onClick={handleBackToCalendar}>カレンダーに戻る</button>
       <h1>{date && new Date(date).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })}</h1>
+      <button onClick={handleBackToCalendar}>カレンダーに戻る</button>
       <select
         defaultValue="all"
         onChange={(e) => handleFilterChange(e.target.value as Filter)}
@@ -153,7 +186,7 @@ const Task: React.FC = () => {
       {filter === 'delete' ? (
         <button onClick={handleEmpty}>ごみ箱を空にする</button>
       ) : (
-        filter !== 'completed' && (
+        <>
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -167,8 +200,15 @@ const Task: React.FC = () => {
             />
             <button type="submit">追加</button>
           </form>
-        )
+        </>
       )}
+      <div className="actions-container">
+        {filter !== 'delete' && (
+          <button className="duplicate-button" onClick={handleDuplicateSelected}>
+            一括複製
+          </button>
+        )}
+      </div>
       <DragDropContext onDragEnd={handleDragEnd}>
         <Droppable droppableId="todos">
           {(provided) => (
@@ -213,18 +253,17 @@ const Task: React.FC = () => {
                         >
                           ⏬
                         </button>
-                        <button 
-                          className="duplicate-button"
-                          onClick={() => handleDuplicate(todo, index)}
-                        >
-                          複製
-                        </button>
+                        <input
+                          type="checkbox"
+                          onChange={() => handleCheckboxChange(todo.id)}
+                          style={{ marginRight: '10px' }}
+                        />
                       </div>
                       {showSubContent === todo.id && (
                         <textarea
                           value={todo.sub_content || ''}
                           onChange={(e) => handleTodo(todo.id, 'sub_content', e.target.value)}
-                          style={{ width: '100%', height: '100px', marginTop: '10px' }} // 大きなテキストエリア
+                          style={{ fontSize: '16px', width: '100%', height: '100px', marginTop: '10px' }} // 大きなテキストエリア
                         />
                       )}
                     </li>
@@ -236,6 +275,25 @@ const Task: React.FC = () => {
           )}
         </Droppable>
       </DragDropContext>
+  
+      {/* カレンダーモーダル */}
+      <Modal
+        isOpen={isCalendarOpen}
+        onRequestClose={() => setIsCalendarOpen(false)}
+        contentLabel="カレンダーを選択"
+        ariaHideApp={false} // アクセシビリティのために追加
+      >
+        <h2>日付を選択してください</h2>
+        <FullCalendar
+          plugins={[dayGridPlugin, interactionPlugin]}
+          initialView="dayGridMonth"
+          events={filteredCalendarEvents}  // 全タスクをイベントとして表示
+          editable={true}
+          selectable={true}
+          dateClick={(arg) => handleDateSelect(arg.dateStr)}  // 日付を選択したときにタスクを複製
+        />
+        <button onClick={() => setIsCalendarOpen(false)}>キャンセル</button>
+      </Modal>
     </div>
   );
 };

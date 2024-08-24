@@ -99,6 +99,7 @@ li input[type='checkbox'] {
   border-radius: 5px;
   cursor: pointer;
   margin-left: 10px;
+  width: 65px;
 }
 
 .delete-button:hover {
@@ -155,4 +156,36 @@ li input[type='checkbox'] {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* モーダルの全体のスタイルを調整 */
+.custom-modal {
+  width: 50%; /* モーダルの幅を調整 */
+  height: 50%; /* モーダルの高さを調整 */
+  max-width: 600px; /* 最大幅を設定 */
+  max-height: 400px; /* 最大高さを設定 */
+  margin: auto;
+  padding: 20px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+/* カレンダーのサイズを調整 */
+.custom-calendar {
+  width: 100%; /* カレンダーの幅をモーダルに合わせる */
+  height: auto; /* 自動調整 */
+  max-height: 300px; /* カレンダーの高さを設定 */
+  overflow-y: auto; /* カレンダーにスクロールを追加 */
+}
+
+.actions-container {
+  display: flex;
+  justify-content: space-between; /* 要素を左右に配置 */
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.duplicate-button {
+  margin-left: auto; /* これが右寄せのためのスタイル */
 }
