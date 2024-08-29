@@ -9,6 +9,7 @@ import jaLocale from '@fullcalendar/core/locales/ja'; // 日本語ローカル�
 
 const Calendar: React.FC = () => {
   const [todos, setTodos] = useState<Todo[]>([]);
+  const [clickCount, setClickCount] = useState<number>(0); // クリック回数を管理
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -16,10 +17,17 @@ const Calendar: React.FC = () => {
   }, []);
 
   const handleDateClick = (arg: any) => {
-    if (arg.jsEvent.defaultPrevented) {
-      return; // クリックイベントが既に処理されている場合は何もしない
+    setClickCount(prevCount => prevCount + 1);
+
+    if (clickCount === 1) {
+      setTimeout(() => {
+        setClickCount(0); // シングルクリックの場合はカウントをリセット
+      }, 500); // ダブルクリックの判定時間（300ms以内）
     }
-    navigate(`/todos/${arg.dateStr}`);
+    if (clickCount === 2) {
+      setClickCount(0); // ダブルクリックでカウントをリセット
+      navigate(`/todos/${arg.dateStr}`);
+    }
   };
 
   const calendarEvents = todos
