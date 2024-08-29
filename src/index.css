@@ -128,7 +128,8 @@ li input[type='checkbox'] {
 .toggle-button {
   background-color: white;
   color: #fff;
-  margin-left: 10px;
+  width: 50px;
+  margin-left: 9px;
 }
 
 .toggle-button:hover {
