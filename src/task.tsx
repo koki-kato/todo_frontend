@@ -5,6 +5,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 import Modal from 'react-modal';
 import Filter from './components/Filter'; 
 
@@ -20,6 +22,7 @@ export interface Todo {
   progress_rate: number;
   start_date: string; // 新しい開始日
   completion_date: string; // 新しい完了予定日
+  completion_date_actual?: string;
 }
 
 
@@ -52,6 +55,7 @@ const Task: React.FC = () => {
       progress_rate: 0, // 初期値として0%を設定
       start_date: '', // 新しい開始日
       completion_date: '', // 新しい完了予定日
+      completion_date_actual: '', // 完了日
     };
     
     createTodo(newTodo).then(data => {
@@ -71,20 +75,26 @@ const Task: React.FC = () => {
     setIsCalendarOpen(true);
 };
 
+let isProcessing = false;
+
 const handleDateSelect = (selectedDate: string) => {
+    if (isProcessing) return; // 二重クリックを防止
+    isProcessing = true;
+
     const duplicatePromises = selectedTodos.map(id => {
         const todo = todos.find(todo => todo.id === id);
         if (todo) {
             const newTodo: Omit<Todo, 'id'> = {
-                content: todo.content,
-                completed: todo.completed,
-                delete_flg: todo.delete_flg,
-                sort: todo.sort + 1,
-                output_date: selectedDate,
-                sub_content: todo.sub_content,
-                progress_rate: todo.progress_rate, 
-                start_date: todo.start_date, // 新しい開始日
-                completion_date: todo.completion_date, // 新しい完了予定日
+              content: todo.content,
+              completed: todo.completed,
+              delete_flg: todo.delete_flg,
+              sort: todo.sort + 1,
+              output_date: selectedDate,
+              sub_content: todo.sub_content,
+              progress_rate: todo.progress_rate, 
+              start_date: todo.start_date,
+              completion_date: todo.completion_date,
+              completion_date_actual: todo.completion_date_actual,
             };
             return createTodo(newTodo);
         }
@@ -92,8 +102,11 @@ const handleDateSelect = (selectedDate: string) => {
     });
 
     Promise.all(duplicatePromises).then(() => {
-        setIsCalendarOpen(false);
-        setSelectedTodos([]);  // 複製が完了したら選択リストをクリア
+      setIsCalendarOpen(false);
+      setSelectedTodos([]);  // 複製が完了したら選択リストをクリア
+      isProcessing = false;  // フラグをリセットして次の操作が可能に
+    }).catch(() => {
+      isProcessing = false;  // エラーが発生してもフラグをリセット
     });
 };
 
@@ -193,11 +206,65 @@ const handleDateSelect = (selectedDate: string) => {
 
   const filteredCalendarEvents = calendarEvents.filter(event => !event.delete_flg);
 
+  const outputDate = date;
+  // output_dateがURLの日付に一致するタスクだけを絞り込む
+  const filteredTodosForExcel = todos.filter(todo => todo.output_date === outputDate && !todo.delete_flg);
+  
+  // Function to export the data to Excel
+  const exportToExcel = () => {
+    const wsData = [
+      ['', 'タイトル', '開始日', '完了予定日', '完了日', '進捗率', '内容'], // Title row
+    ];
+  console.log(filteredTodosForExcel);
+    filteredTodosForExcel.forEach((todo) => {
+      wsData.push([
+        '',
+        todo.content,
+        todo.start_date,
+        todo.completion_date,
+        todo.completed ? todo.output_date : '', // Actual completion date if completed
+        `${todo.progress_rate}%`,
+        todo.sub_content || '',
+      ]);
+    });
+  
+    // エクセル作成
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'WBS');
+  
+    // Create WBS graph columns
+    const wbsGraphColumns = ['G', 'H', 'I', 'J', 'K']; // Sample columns, adjust as needed
+    wbsGraphColumns.forEach((col, index) => {
+      ws[`${col}1`] = { t: 's', v: `Week ${index + 1}` }; // Title for WBS graph columns
+      
+      filteredTodosForExcel.forEach((todo, rowIndex) => {
+        const startDate = new Date(todo.start_date);
+        const completionDate = new Date(todo.completion_date);
+  
+        // Adjust the date range as needed, below is a simple example
+        const weekStart = new Date(2024, 0, index * 7 + 1); // Assuming starting from Jan 1, 2024
+        const weekEnd = new Date(2024, 0, index * 7 + 7);
+  
+        // Calculate if this week falls within the start and completion dates
+        if (startDate <= weekEnd && completionDate >= weekStart) {
+          ws[`${col}${rowIndex + 2}`] = { t: 's', v: '■' };
+        }
+      });
+    });
+  
+    // Generate Excel file and trigger download
+    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([wbout], { type: 'application/octet-stream' });
+    saveAs(blob, `wbs_output_${outputDate}.xlsx`);
+  };
+
   return (
     <div>
       <h1>{date && new Date(date).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })}</h1>
       <button onClick={handleBackToCalendar}>カレンダーに戻る</button>
       <Filter filter={filter} onChange={setFilter} />
+      <button onClick={exportToExcel} style={{ marginBottom: '20px' }}>エクセルに出力</button>
       {filter === 'delete' ? (
         <button onClick={handleEmpty}>ごみ箱を空にする</button>
       ) : (
@@ -248,7 +315,7 @@ const handleDateSelect = (selectedDate: string) => {
                             value={todo.progress_rate || 0}
                             onChange={(e) => handleProgressChange(todo.id, Number(e.target.value))}
                             disabled={todo.delete_flg}
-                          style={{ fontSize: '14px', width: '79px', marginBottom: '17px', marginTop: '-0.5px' }}
+                            style={{ fontSize: '14px', width: '79px', marginBottom: '17px', marginTop: '-0.5px' }}
                           >
                             {[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map(rate => (
                               <option key={rate} value={rate}>{rate}%</option>
@@ -334,7 +401,7 @@ const handleDateSelect = (selectedDate: string) => {
         <button onClick={() => setIsCalendarOpen(false)}>キャンセル</button>
       </Modal>
     </div>
-  );  
+  );
 };
 
 export default Task;
