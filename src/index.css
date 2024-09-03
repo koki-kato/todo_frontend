@@ -145,39 +145,6 @@ li input[type='checkbox'] {
   cursor: grab;
 }
 
-/* カレンダーのスタイル */
-.fc {
-  background-color: white; /* 背景色を白に */
-  border: 1px solid black; /* 黒い枠線を追加 */
-  width: 100%; /* 幅を100%に設定 */
-}
-
-.fc-h-event .fc-event-title {
-  display: inline-block;
-  left: 0px;
-  font-size: 11px;
-  font-weight: 500;
-  max-width: 100%;
-  overflow: hidden;
-  right: 0px;
-  vertical-align: top;
-}
-
-.fc .fc-daygrid-day-frame {
-  max-height: 140px;
-  height: 140px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  position: relative;
-  white-space: nowrap; /* イベントが折り返されないようにする */
-}
-
-.fc-event {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 /* モーダルの全体のスタイルを調整 */
 .custom-modal {
   width: 50%; /* モーダルの幅を調整 */
@@ -189,14 +156,6 @@ li input[type='checkbox'] {
   background-color: white;
   border-radius: 8px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-}
-
-/* カレンダーのサイズを調整 */
-.custom-calendar {
-  width: 100%; /* カレンダーの幅をモーダルに合わせる */
-  height: auto; /* 自動調整 */
-  max-height: 300px; /* カレンダーの高さを設定 */
-  overflow-y: auto; /* カレンダーにスクロールを追加 */
 }
 
 .actions-container {

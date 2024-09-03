@@ -40,7 +40,7 @@ const Calendar: React.FC = () => {
       title: todo.content,
       date: todo.output_date,
       id: todo.id.toString(),
-      color: todo.completed ? 'green' : '',
+      color: todo.completed ? '#ADFF2F' : '',
     }));
 
   const handleEventDrop = (info: any) => {
