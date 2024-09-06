@@ -1,5 +1,5 @@
 // src/api.ts
-import { Todo } from './todo';
+import type { Todo } from './types'; // type-only import で型をインポート
 
 
 export const fetchTodos = async (): Promise<Todo[]> => {

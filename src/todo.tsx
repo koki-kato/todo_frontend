@@ -1,15 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { fetchTodos, createTodo, updateTodo, deleteTodo } from './api';
+import TodoItem from './components/TodoItem'; // 相対パスを正しく設定
+import type { Todo } from './types'; // type-only import で型をインポート
+
+
+// import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 // import localforage from 'localforage';
-
-
-// "Todo" 型の定義をコンポーネント外で行います
-export interface Todo {
-  content: string;
-  readonly id: number;
-  completed_flg: boolean;
-  delete_flg: boolean;
-}
 
 
 type Filter = 'all' | 'completed' | 'unchecked' | 'delete'; // <-- 追加
@@ -78,22 +74,22 @@ const Todo: React.FC = () => {
   };
 
   // 特定のTodoのプロパティを更新する関数
-  const handleTodo = <K extends keyof Todo, V extends Todo[K]>(
-    id: number,
-    key: K,
-    value: V
-  ) => {
-    const updatedTodos = todos.map(todo =>
-      todo.id === id ? { ...todo, [key]: value } : todo
-    );
+  // const handleTodo = <K extends keyof Todo, V extends Todo[K]>(
+  //   id: number,
+  //   key: K,
+  //   value: V
+  // ) => {
+  //   const updatedTodos = todos.map(todo =>
+  //     todo.id === id ? { ...todo, [key]: value } : todo
+  //   );
 
-    setTodos(updatedTodos);
+  //   setTodos(updatedTodos);
 
-    const todo = updatedTodos.find(todo => todo.id === id);
-    if (todo) {
-      updateTodo(id, todo);
-    }
-  };
+  //   const todo = updatedTodos.find(todo => todo.id === id);
+  //   if (todo) {
+  //     updateTodo(id, todo);
+  //   }
+  // };
 
   return (
     <div className="todo-container">
@@ -131,23 +127,13 @@ const Todo: React.FC = () => {
       )}
       <ul>
         {getFilteredTodos().map((todo) => (
-          <li key={todo.id}>
-            <input
-              type="checkbox"
-              disabled={todo.delete_flg}
-              checked={todo.completed_flg}
-              onChange={() => handleTodo(todo.id, 'completed_flg', !todo.completed_flg)}
-            />
-            <input
-              type="text"
-              disabled={todo.completed_flg || todo.delete_flg}
-              value={todo.content}
-              onChange={(e) => handleTodo(todo.id, 'content', e.target.value)}
-            />
-            <button onClick={() => handleTodo(todo.id, 'delete_flg', !todo.delete_flg)}>
-              {todo.delete_flg ? '復元' : '削除'}
-            </button>
-          </li>
+          <TodoItem
+            key={todo.id}
+            todo={todo}
+            updateTodo={updateTodo} // サーバー更新用
+            setTodos={setTodos} // ステート更新用
+            todos={todos} // ステートを渡す
+          />
         ))}
       </ul>
     </div>
