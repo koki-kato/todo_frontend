@@ -1,16 +1,25 @@
 import React from 'react';
 import { Todo } from '../types'; // Todo 型をインポート
+import { DraggableProvided, DraggableStateSnapshot } from 'react-beautiful-dnd';
 
 interface TodoItemProps {
   todo: Todo;
-  // handleTodo: <K extends keyof Todo, V extends Todo[K]>(id: number, key: K, value: V) => void; // handleTodo を追加
-  updateTodo: (id: number, todo: Todo) => void; // 親コンポーネントに通知する関数を追加
+  index: number; // ドラッグアンドドロップのために必要なインデックス
+  updateTodo: (id: number, todo: Todo) => void; // 親コンポーネントに通知する関数
   setTodos: (todos: Todo[]) => void; // 親のステート更新用の関数
   todos: Todo[]; // 親のステートを渡す
+  provided: DraggableProvided; // ドラッグ用に提供されたプロパティ
+  snapshot: DraggableStateSnapshot; // ドラッグの状態情報
 }
 
-const TodoItem: React.FC<TodoItemProps> = ({ todo, updateTodo, setTodos, todos }) => {
-
+const TodoItem: React.FC<TodoItemProps> = ({
+  todo,
+  updateTodo,
+  setTodos,
+  todos,
+  provided,
+  snapshot
+}) => {
   const handleTodoChange = <K extends keyof Todo, V extends Todo[K]>(
     id: number,
     key: K,
@@ -29,7 +38,15 @@ const TodoItem: React.FC<TodoItemProps> = ({ todo, updateTodo, setTodos, todos }
   };
 
   return (
-    <li>
+    <li
+      ref={provided.innerRef}
+      {...provided.draggableProps}
+      {...provided.dragHandleProps}
+      style={{
+        ...provided.draggableProps.style,
+        backgroundColor: snapshot.isDragging ? 'lightgreen' : 'white',
+      }}
+    >
       <input
         type="checkbox"
         disabled={todo.delete_flg}
