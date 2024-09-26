@@ -37,15 +37,16 @@
 
 /* イベントのスタイル */
 .fc-event {
-  background-color: #ffecb3; /* 明るい黄色の背景 */
-  color: #333; /* 文字色を濃いグレーに */
+  /* background-color: #039be5; 明るい黄色の背景 */
+  background-color: white; 
+  color: #ffffff; /* 文字色を濃いグレーに */
   border-radius: 5px;
   padding: 3px 5px;
   font-size: 12px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .fc-h-event .fc-event-title {
@@ -55,7 +56,23 @@
   overflow: hidden;
   right: 0px;
   vertical-align: top;
-  color: #333; /* 文字色を濃いグレーに */
+  color: black; /* 文字色を濃いグレーに */
+}
+
+.fc-h-event {
+  border: none; /* 枠線を無効化 */
+}
+
+/* 今日の日付に薄いハイライトをつける */
+.fc-day-today {
+  background-color: rgba(0, 128, 128, 0.1); /* 薄いシアン色の背景を今日の日付に適用 */
+  border-color: #0B8043; /* 緑色の境界線を追加 */
+}
+
+
+.fc-h-event .fc-event-main {
+  font-size: 12px; /* お好みのサイズに調整 */
+  color: black;    /* テキスト色を黒に設定 */
 }
 
 /* 今日の日付セルのスタイル */
@@ -87,4 +104,8 @@
 
 .fc-button:hover {
   background-color: #ffa726; /* マウスオーバー時に少し濃いオレンジに */
+}
+
+.fc-event {
+  outline: none; /* フォーカス時のアウトラインを無効化 */
 }

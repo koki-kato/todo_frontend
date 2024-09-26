@@ -10,68 +10,86 @@ import jaLocale from '@fullcalendar/core/locales/ja'; // 日本語ローカル�
 const Calendar: React.FC = () => {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [clickCount, setClickCount] = useState<number>(0); // クリック回数を管理
+  const [clickedDate, setClickedDate] = useState<string | null>(null); // クリックされた日付を状態として管理
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchTodos().then(data => setTodos(data));
   }, []);
 
-  const handleDateClick = (arg: any) => {
-    setClickCount(prevCount => prevCount + 1);
-
+  // ダブルクリックの判定を管理するuseEffect
+  useEffect(() => {
     if (clickCount === 1) {
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         setClickCount(0); // シングルクリックの場合はカウントをリセット
-      }, 500); // ダブルクリックの判定時間（300ms以内）
+      }, 500); // ダブルクリックの判定時間
+
+      return () => clearTimeout(timer); // クリーンアップ
     }
-    if (clickCount === 2) {
+    if (clickCount === 2 && clickedDate) { // clickedDateがセットされているか確認
       setClickCount(0); // ダブルクリックでカウントをリセット
-      navigate(`/todos/${arg.dateStr}`);
+      // navigateを行う
+      navigate(`/todos/${clickedDate}`);
     }
+  }, [clickCount, clickedDate, navigate]); // clickedDateを依存リストに追加
+
+  const handleDateClick = (arg: any) => {
+    setClickedDate(arg.dateStr); // クリックされた日付を状態として保存
+    setClickCount(prevCount => prevCount + 1);
   };
 
   const calendarEvents = todos
     .filter(todo => !todo.delete_flg)
-    .sort((a, b) => {
-      console.log('Comparing:', a.content, Number(a.sort), Number(b.sort)); // デバッグ用のログ
-      return Number(b.sort) - Number(a.sort);
-    })
     .map(todo => ({
       title: todo.content,
       date: todo.output_date,
       id: todo.id.toString(),
-      color: todo.completed ? '#ADFF2F' : '',
+      completed: todo.completed, // 完了フラグを保持
     }));
 
   const handleEventDrop = (info: any) => {
     const updatedTodo = todos.find(todo => todo.id.toString() === info.event.id);
     if (updatedTodo) {
-      const newDate = info.event.startStr;
-      updateTodo(updatedTodo.id, { ...updatedTodo, output_date: newDate });
+      const updatedTodos = todos.map(todo =>
+        todo.id === updatedTodo.id ? { ...todo } : todo
+      );
+
+      const sortedTodos = updatedTodos.map((todo, index) => ({ ...todo, sort: index + 1 }));
+
+      sortedTodos.forEach(todo => {
+        updateTodo(todo.id, { sort: todo.sort });
+      });
+
+      setTodos(sortedTodos);
     }
   };
 
-  const handleEventDragStart = (arg: any) => {
-    arg.jsEvent.preventDefault(); // ドラッグ操作を無効にする
-  };
 
   const handleEventClick = (arg: any) => {
-    arg.jsEvent.stopPropagation(); // イベントのクリック操作を親要素に伝播させない
+    arg.jsEvent.stopPropagation();
+  };
+
+  const renderEventContent = (eventInfo: any) => {
+    const circleColor = eventInfo.event.extendedProps.completed ? '#0B8043' : '#0000FF';
+    return (
+      <div style={{ outline: 'none' }}>
+        <span style={{ color: circleColor }}>●</span> {eventInfo.event.title}
+      </div>
+    );
   };
 
   return (
     <FullCalendar
-      plugins={[dayGridPlugin, interactionPlugin]} // プラグインを設定
-      initialView="dayGridMonth" // 初期表示を月表示に設定
-      events={calendarEvents} // イベントのデータを設定
-      dateClick={handleDateClick} // 日付をクリックしたときのハンドラ
-      editable={true} // イベントの編集を有効にする
-      eventDrop={handleEventDrop} // イベントをドラッグし終わったときのハンドラ
-      eventDragStart={handleEventDragStart} // イベントをドラッグし始めたときのハンドラ
-      eventClick={handleEventClick} // イベントをクリックしたときのハンドラ
-      selectable={true} // カレンダー上で選択を有効にする
-      select={handleDateClick} // 日付をクリックしたときのハンドラ
-      locale={jaLocale} // 日本語ローカルを設定
+      plugins={[dayGridPlugin, interactionPlugin]}
+      initialView="dayGridMonth"
+      events={calendarEvents}
+      dateClick={handleDateClick}
+      editable={true}
+      eventDrop={handleEventDrop}
+      eventClick={handleEventClick}
+      eventContent={renderEventContent}
+      selectable={true}
+      locale={jaLocale}
     />
   );
 };

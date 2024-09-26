@@ -2,14 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 import { fetchTodos, createTodo, updateTodo, deleteTodo } from './api';
 import { useParams, useNavigate } from 'react-router-dom';
-import FullCalendar from '@fullcalendar/react';
-import dayGridPlugin from '@fullcalendar/daygrid';
-import interactionPlugin from '@fullcalendar/interaction';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
-import Modal from 'react-modal';
-import Filter from './components/Filter'; 
-
+import Filter from './components/Filter';
 
 export interface Todo {
   content: string;
@@ -20,11 +15,11 @@ export interface Todo {
   sub_content?: string;
   output_date: string;
   progress_rate: number;
+  copy_id: number; // コピーID
   start_date: string; // 新しい開始日
   completion_date: string; // 新しい完了予定日
   completion_date_actual?: string;
 }
-
 
 type Filter = 'all' | 'completed' | 'unchecked' | 'delete';
 
@@ -52,12 +47,21 @@ const Task: React.FC = () => {
       sort: todos.length + 1,
       output_date: date || '',
       sub_content: '',
+      copy_id: Math.floor(Math.random() * 1000000), // コピーIDを生成
       progress_rate: 0, // 初期値として0%を設定
-      start_date: '', // 新しい開始日
-      completion_date: '', // 新しい完了予定日
+      start_date: date || '', // 新しい開始日
+      completion_date: date || '', // 新しい完了予定日
       completion_date_actual: '', // 完了日
     };
-    
+
+    // 同じ copy_id と output_date のタスクが存在するかチェック
+    const existingTodo = todos.find(todo => todo.copy_id === newTodo.copy_id && todo.output_date === newTodo.output_date);
+
+    if (existingTodo) {
+      console.log('同じcopy_idとoutput_dateのタスクがすでに存在します。');
+      return; // 同じものがあれば作成しない
+    }
+
     createTodo(newTodo).then(data => {
       setTodos(prevTodos => [...prevTodos, data]);
       setText('');
@@ -73,42 +77,9 @@ const Task: React.FC = () => {
   const handleDuplicateSelected = () => {
     if (selectedTodos.length === 0) return;
     setIsCalendarOpen(true);
-};
+  };
 
-let isProcessing = false;
 
-const handleDateSelect = (selectedDate: string) => {
-    if (isProcessing) return; // 二重クリックを防止
-    isProcessing = true;
-
-    const duplicatePromises = selectedTodos.map(id => {
-        const todo = todos.find(todo => todo.id === id);
-        if (todo) {
-            const newTodo: Omit<Todo, 'id'> = {
-              content: todo.content,
-              completed: todo.completed,
-              delete_flg: todo.delete_flg,
-              sort: todo.sort + 1,
-              output_date: selectedDate,
-              sub_content: todo.sub_content,
-              progress_rate: todo.progress_rate, 
-              start_date: todo.start_date,
-              completion_date: todo.completion_date,
-              completion_date_actual: todo.completion_date_actual,
-            };
-            return createTodo(newTodo);
-        }
-        return null;
-    });
-
-    Promise.all(duplicatePromises).then(() => {
-      setIsCalendarOpen(false);
-      setSelectedTodos([]);  // 複製が完了したら選択リストをクリア
-      isProcessing = false;  // フラグをリセットして次の操作が可能に
-    }).catch(() => {
-      isProcessing = false;  // エラーが発生してもフラグをリセット
-    });
-};
 
   const getFilteredTodos = () => {
     let filteredTodos = [];
@@ -134,30 +105,85 @@ const handleDateSelect = (selectedDate: string) => {
     key: K,
     value: V
   ) => {
-    const updatedTodos = todos.map(todo =>
-      todo.id === id ? { ...todo, [key]: value } : todo
-    );
+    const todo = todos.find(todo => todo.id === id);
+    if (!todo) return;
 
+    const updatedTodos = todos.map(t =>
+      t.id === id ? { ...t, [key]: value } : t
+    );
     setTodos(updatedTodos);
 
-    const todo = updatedTodos.find(todo => todo.id === id);
-    if (todo) {
-      updateTodo(id, todo);
-    }
-  };
+    if (key === 'start_date' || key === 'completion_date') {
+      const startDate = new Date(key === 'start_date' ? value as string : todo.start_date);
+      const newCompletionDate = new Date(key === 'completion_date' ? value as string : todo.completion_date);
+      const oldCompletionDate = new Date(todo.completion_date);
+      const daysBetween = Math.floor((newCompletionDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24));
 
-  const handleProgressChange = (id: number, newProgress: number) => {
-    setTodos(prevTodos =>
-      prevTodos.map(todo =>
-        todo.id === id
-          ? { ...todo, progress_rate: newProgress, completed: newProgress === 100 }
-          : todo
-      )
-    );
+      // `copy_id` がnullの場合、新しい `copy_id` を生成
+      const copyId = todo.copy_id || Math.floor(Math.random() * 1000000); // `copy_id` が null なら新しく生成
 
-    const updatedTodo = todos.find(todo => todo.id === id);
-    if (updatedTodo) {
-      updateTodo(id, { ...updatedTodo, progress_rate: newProgress, completed: newProgress === 100 });
+      // 完了予定日を短縮した場合、予定日から外れたものに `delete_flg` を立てる
+      if (newCompletionDate < oldCompletionDate) {
+        const daysToFlag = Math.floor((oldCompletionDate.getTime() - newCompletionDate.getTime()) / (1000 * 3600 * 24));
+        for (let i = 1; i <= daysToFlag; i++) {
+          const dateToFlag = new Date(newCompletionDate);
+          dateToFlag.setDate(dateToFlag.getDate() + i);
+          const todoToFlag = todos.find(t => t.copy_id === copyId && t.output_date === dateToFlag.toISOString().split('T')[0]);
+          if (todoToFlag) {
+            updateTodo(todoToFlag.id, { ...todoToFlag, delete_flg: true }).then(() => {
+              setTodos(prevTodos => prevTodos.map(t => t.id === todoToFlag.id ? { ...t, delete_flg: true } : t));
+            });
+          }
+        }
+      }
+
+      // 開始日から完了予定日の間のタスクを更新または新規作成
+      for (let i = 0; i <= daysBetween; i++) {
+        const newDate = new Date(startDate);
+        newDate.setDate(newDate.getDate() + i);
+
+        const existingTodo = todos.find(t => t.copy_id === copyId && t.output_date === newDate.toISOString().split('T')[0]);
+
+        if (!existingTodo) {
+          const newTodo: Omit<Todo, 'id'> = {
+            content: todo.content,
+            completed: todo.completed,
+            delete_flg: false,
+            sort: todo.sort + 1,
+            output_date: newDate.toISOString().split('T')[0],
+            sub_content: todo.sub_content,
+            progress_rate: todo.progress_rate,
+            start_date: startDate.toISOString().split('T')[0],
+            completion_date: newCompletionDate.toISOString().split('T')[0],
+            completion_date_actual: todo.completion_date_actual,
+            copy_id: copyId, // 一意のコピーIDを設定
+          };
+
+          createTodo(newTodo).then(createdTodo => {
+            setTodos(prevTodos => [...prevTodos, createdTodo]);
+          });
+        } else if (existingTodo.delete_flg) {
+          // 既存のタスクの `delete_flg` を解除して更新
+          updateTodo(existingTodo.id, { ...existingTodo, delete_flg: false, completion_date: newCompletionDate.toISOString().split('T')[0] }).then(() => {
+            setTodos(prevTodos =>
+              prevTodos.map(t => t.id === existingTodo.id ? { ...t, delete_flg: false, completion_date: newCompletionDate.toISOString().split('T')[0] } : t)
+            );
+          });
+        } else {
+          // 既存のタスクを更新
+          updateTodo(existingTodo.id, { ...existingTodo, completion_date: newCompletionDate.toISOString().split('T')[0] }).then(() => {
+            setTodos(prevTodos =>
+              prevTodos.map(t => t.id === existingTodo.id ? { ...t, completion_date: newCompletionDate.toISOString().split('T')[0] } : t)
+            );
+          });
+        }
+      }
+
+      // 元のタスクも更新
+      updateTodo(id, { ...todo, [key]: value, copy_id: copyId });
+    } else {
+      // その他のフィールドが変更された場合の処理
+      updateTodo(id, { ...todo, [key]: value });
     }
   };
 
@@ -196,26 +222,16 @@ const handleDateSelect = (selectedDate: string) => {
     navigate('/');
   };
 
-  // カレンダーに表示するイベントを作成
-  const calendarEvents = todos.map(todo => ({
-    title: todo.content,
-    date: todo.output_date,
-    delete_flg: todo.delete_flg,
-    id: todo.id.toString(),
-  }));
-
-  const filteredCalendarEvents = calendarEvents.filter(event => !event.delete_flg);
-
   const outputDate = date;
   // output_dateがURLの日付に一致するタスクだけを絞り込む
   const filteredTodosForExcel = todos.filter(todo => todo.output_date === outputDate && !todo.delete_flg);
-  
+
   // Function to export the data to Excel
   const exportToExcel = () => {
     const wsData = [
       ['', 'タイトル', '開始日', '完了予定日', '完了日', '進捗率', '内容'], // Title row
     ];
-  console.log(filteredTodosForExcel);
+    console.log(filteredTodosForExcel);
     filteredTodosForExcel.forEach((todo) => {
       wsData.push([
         '',
@@ -227,36 +243,51 @@ const handleDateSelect = (selectedDate: string) => {
         todo.sub_content || '',
       ]);
     });
-  
+
     // エクセル作成
     const ws = XLSX.utils.aoa_to_sheet(wsData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'WBS');
-  
+
     // Create WBS graph columns
     const wbsGraphColumns = ['G', 'H', 'I', 'J', 'K']; // Sample columns, adjust as needed
     wbsGraphColumns.forEach((col, index) => {
       ws[`${col}1`] = { t: 's', v: `Week ${index + 1}` }; // Title for WBS graph columns
-      
+
       filteredTodosForExcel.forEach((todo, rowIndex) => {
         const startDate = new Date(todo.start_date);
         const completionDate = new Date(todo.completion_date);
-  
+
         // Adjust the date range as needed, below is a simple example
         const weekStart = new Date(2024, 0, index * 7 + 1); // Assuming starting from Jan 1, 2024
         const weekEnd = new Date(2024, 0, index * 7 + 7);
-  
+
         // Calculate if this week falls within the start and completion dates
         if (startDate <= weekEnd && completionDate >= weekStart) {
           ws[`${col}${rowIndex + 2}`] = { t: 's', v: '■' };
         }
       });
     });
-  
+
     // Generate Excel file and trigger download
     const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
     const blob = new Blob([wbout], { type: 'application/octet-stream' });
     saveAs(blob, `wbs_output_${outputDate}.xlsx`);
+  };
+
+  const handleProgressChange = (id: number, newProgress: number) => {
+    setTodos(prevTodos =>
+      prevTodos.map(todo =>
+        todo.id === id
+          ? { ...todo, progress_rate: newProgress, completed: newProgress === 100 }
+          : todo
+      )
+    );
+
+    const updatedTodo = todos.find(todo => todo.id === id);
+    if (updatedTodo) {
+      updateTodo(id, { ...updatedTodo, progress_rate: newProgress, completed: newProgress === 100 });
+    }
   };
 
   return (
@@ -284,13 +315,6 @@ const handleDateSelect = (selectedDate: string) => {
           </form>
         </>
       )}
-      <div className="actions-container">
-        {filter !== 'delete' && (
-          <button className="duplicate-button" onClick={handleDuplicateSelected}>
-            一括複製
-          </button>
-        )}
-      </div>
       <DragDropContext onDragEnd={handleDragEnd}>
         <Droppable droppableId="todos">
           {(provided) => (
@@ -329,6 +353,7 @@ const handleDateSelect = (selectedDate: string) => {
                             id={`start-date-${todo.id}`}
                             value={todo.start_date}
                             onChange={(e) => handleTodo(todo.id, 'start_date', e.target.value)}
+                            min={todo.output_date} // 開始日がoutput_dateより前に設定できないようにする
                           />
                           <label htmlFor={`completion-date-${todo.id}`} style={{ fontSize: '12px' }}>完了予定日</label>
                           <input
@@ -336,6 +361,7 @@ const handleDateSelect = (selectedDate: string) => {
                             id={`completion-date-${todo.id}`}
                             value={todo.completion_date}
                             onChange={(e) => handleTodo(todo.id, 'completion_date', e.target.value)}
+                            min={todo.start_date || todo.output_date} // 完了予定日が開始日またはoutput_dateより前に設定できないようにする
                             style={{ marginBottom: '12px' }}
                           />
                         </div>
@@ -356,14 +382,6 @@ const handleDateSelect = (selectedDate: string) => {
                         <button className="toggle-button" onClick={() => toggleSubContent(todo.id)}>
                           ⏬
                         </button>
-                        <div className="div-container">
-                          <label style={{ fontSize: '12px', display: 'block', marginBottom: '3px', width: '80px' }}>複製チェック</label>
-                          <input
-                            type="checkbox"
-                            onChange={() => handleCheckboxChange(todo.id)}
-                            style={{ marginRight: '10px', marginBottom: '20px' }}
-                          />
-                        </div>
                       </div>
                       {showSubContent === todo.id && (
                         <textarea
@@ -381,25 +399,6 @@ const handleDateSelect = (selectedDate: string) => {
           )}
         </Droppable>
       </DragDropContext>
-  
-      {/* カレンダーモーダル */}
-      <Modal
-        isOpen={isCalendarOpen}
-        onRequestClose={() => setIsCalendarOpen(false)}
-        contentLabel="カレンダーを選択"
-        ariaHideApp={false}
-      >
-        <h2>日付を選択してください</h2>
-        <FullCalendar
-          plugins={[dayGridPlugin, interactionPlugin]}
-          initialView="dayGridMonth"
-          events={filteredCalendarEvents}
-          editable={true}
-          selectable={true}
-          dateClick={(arg) => handleDateSelect(arg.dateStr)}
-        />
-        <button onClick={() => setIsCalendarOpen(false)}>キャンセル</button>
-      </Modal>
     </div>
   );
 };
