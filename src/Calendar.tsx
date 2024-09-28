@@ -45,7 +45,7 @@ const Calendar: React.FC = () => {
     const markdownStripped = content.replace(/\[(.*?)\]\((https?:\/\/.*?)\)/g, '$1'); // Markdownリンクを削除
     const htmlStripped = markdownStripped.replace(/<a [^>]+>(.*?)<\/a>/g, '$1'); // HTML <a> タグを削除
     return htmlStripped;
-  };  
+  };
 
   const calendarEvents = todos
     .filter(todo => !todo.delete_flg)
