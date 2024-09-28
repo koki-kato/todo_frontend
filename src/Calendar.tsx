@@ -38,10 +38,19 @@ const Calendar: React.FC = () => {
     setClickCount(prevCount => prevCount + 1);
   };
 
+
+   // HTMLの<a>タグやマークダウン形式のリンクを除去してテキストだけを返す関数
+   const stripMarkdownLinks = (content: string) => {
+    // Markdownリンク形式 [リンクテキスト](URL) と HTML の <a> タグを削除
+    const markdownStripped = content.replace(/\[(.*?)\]\((https?:\/\/.*?)\)/g, '$1'); // Markdownリンクを削除
+    const htmlStripped = markdownStripped.replace(/<a [^>]+>(.*?)<\/a>/g, '$1'); // HTML <a> タグを削除
+    return htmlStripped;
+  };  
+
   const calendarEvents = todos
     .filter(todo => !todo.delete_flg)
     .map(todo => ({
-      title: todo.content,
+      title: stripMarkdownLinks(todo.content),
       date: todo.output_date,
       id: todo.id.toString(),
       completed: todo.completed, // 完了フラグを保持

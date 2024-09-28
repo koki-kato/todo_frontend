@@ -109,3 +109,11 @@
 .fc-event {
   outline: none; /* フォーカス時のアウトラインを無効化 */
 }
+
+.input-content {
+  width: 80%;
+  display: flex;
+  flex-direction: column; /* 子要素を縦に並べる */
+  align-items: flex-start; /* 子要素を左揃えにする（必要に応じて調整） */
+  margin-bottom: 10px; /* 下に余白を追加 */
+}

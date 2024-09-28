@@ -5,6 +5,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import Filter from './components/Filter';
+import DOMPurify from 'dompurify';
+
 
 export interface Todo {
   content: string;
@@ -29,9 +31,7 @@ const Task: React.FC = () => {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [text, setText] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
-  const [selectedTodos, setSelectedTodos] = useState<number[]>([]);
   const [showSubContent, setShowSubContent] = useState<number | null>(null);
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   useEffect(() => {
     fetchTodos().then(data => setTodos(data)); // 全てのタスクを取得
@@ -67,19 +67,6 @@ const Task: React.FC = () => {
       setText('');
     });
   };
-
-  const handleCheckboxChange = (id: number) => {
-    setSelectedTodos(prev =>
-      prev.includes(id) ? prev.filter(todoId => todoId !== id) : [...prev, id]
-    );
-  };
-
-  const handleDuplicateSelected = () => {
-    if (selectedTodos.length === 0) return;
-    setIsCalendarOpen(true);
-  };
-
-
 
   const getFilteredTodos = () => {
     let filteredTodos = [];
@@ -290,6 +277,26 @@ const Task: React.FC = () => {
     }
   };
 
+  // マークダウン形式のリンクを<a>タグに変換する関数
+  const parseMarkdownLinks = (content: string) => {
+    // [タイトル](URL) の形式を検出する正規表現
+    const linkRegex = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g; // [タイトル](URL) の形式を検出
+    const sanitizedContent = content.replace(linkRegex, (match, text, url) => {
+      return `<a href="${url}" target="_blank" rel="noopener noreferrer">${text}</a>`;
+    });
+    return DOMPurify.sanitize(sanitizedContent); // XSS対策としてサニタイズ
+  };
+
+  // リンクのクリックイベントを処理する関数
+  const handleMarkdownLinkClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const link = e.target as HTMLAnchorElement;
+    if (link.tagName === 'A' && link.href) {
+      window.open(link.href, '_blank', 'noopener,noreferrer');
+      e.preventDefault(); // 標準のリンク動作をキャンセル
+    }
+  };
+
+
   return (
     <div>
       <h1>{date && new Date(date).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })}</h1>
@@ -365,17 +372,31 @@ const Task: React.FC = () => {
                             style={{ marginBottom: '12px' }}
                           />
                         </div>
-                        <input
-                          type="text"
-                          disabled={todo.completed || todo.delete_flg}
-                          value={todo.content}
-                          onChange={(e) => handleTodo(todo.id, 'content', e.target.value)}
-                          className="task-input"
-                          style={{
-                            backgroundColor: todo.completed && todo.progress_rate === 100 ? '#d3d3d3' : '',
-                            color: todo.completed && todo.progress_rate === 100 ? '#808080' : '',
-                          }}
-                        />
+                        <div className="input-content">
+                            {/* 入力内容を解析してリンクに変換し、リンクのタイトルを表示 */}
+                            {(todo.content.includes('[') && todo.content.includes('](')) || 
+                            parseMarkdownLinks(todo.content).includes('<a') ? (
+                              <div
+                                className="task-content"
+                                dangerouslySetInnerHTML={{ __html: parseMarkdownLinks(todo.content) }} // 解析されたリンクを表示
+                                onClick={handleMarkdownLinkClick}
+                                style={{ marginLeft: '5px', fontSize: '19.5px', color: '#555', marginTop: '5px' }} // 小さく表示するためのスタイル
+                              />
+                            ) : null}
+                            {/* ユーザーがテキストを入力するフィールド */}
+                          <input
+                            type="text"
+                            disabled={todo.completed || todo.delete_flg}
+                            value={todo.content}
+                            onChange={(e) => handleTodo(todo.id, 'content', e.target.value)}
+                            className="task-input"
+                            style={{
+                              width: '98%', // ここで幅を100%に指定
+                              backgroundColor: todo.completed && todo.progress_rate === 100 ? '#d3d3d3' : '',
+                              color: todo.completed && todo.progress_rate === 100 ? '#808080' : '',
+                            }}
+                          />
+                        </div>
                         <button className="delete-button" onClick={() => handleTodo(todo.id, 'delete_flg', !todo.delete_flg)}>
                           {todo.delete_flg ? '復元' : '削除'}
                         </button>
