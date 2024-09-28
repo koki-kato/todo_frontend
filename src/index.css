@@ -68,10 +68,11 @@ li {
   box-sizing: border-box; /* パディングとボーダーを含む */
 }
 
-li .input-container {
+div .input-container {
   display: flex;
   width: 100%;
   align-items: center;
+  justify-content: space-between;
 }
 
 /* タスクのタイトルを整える*/

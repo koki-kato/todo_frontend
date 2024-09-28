@@ -6,7 +6,10 @@ import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import Filter from './components/Filter';
 import DOMPurify from 'dompurify';
-
+import ReactMarkdown from 'react-markdown';
+import Modal from 'react-modal';
+import { darcula } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { PrismAsyncLight as SyntaxHighlighter } from 'react-syntax-highlighter';
 
 export interface Todo {
   content: string;
@@ -32,6 +35,8 @@ const Task: React.FC = () => {
   const [text, setText] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
   const [showSubContent, setShowSubContent] = useState<number | null>(null);
+  const [modalIsOpen, setModalIsOpen] = useState(false);
+  const [modalContent, setModalContent] = useState<string | null>(null);
 
   useEffect(() => {
     fetchTodos().then(data => setTodos(data)); // 全てのタスクを取得
@@ -296,6 +301,15 @@ const Task: React.FC = () => {
     }
   };
 
+  const closeModal = () => {
+    setModalIsOpen(false);
+    setModalContent(null);
+  };
+
+  const openModal = (content: string) => {
+    setModalContent(content);
+    setModalIsOpen(true);
+  };
 
   return (
     <div>
@@ -339,7 +353,6 @@ const Task: React.FC = () => {
                       className="task-item"
                     >
                       <div className="input-container">
-                        <span {...provided.dragHandleProps} className="drag-handle">⇅</span>
                         <div className="div-container">
                           <label htmlFor={`progress-rate-${todo.id}`} style={{ fontSize: '12px' }}>進捗率</label>
                           <select
@@ -373,17 +386,17 @@ const Task: React.FC = () => {
                           />
                         </div>
                         <div className="input-content">
-                            {/* 入力内容を解析してリンクに変換し、リンクのタイトルを表示 */}
-                            {(todo.content.includes('[') && todo.content.includes('](')) || 
+                          {/* 入力内容を解析してリンクに変換し、リンクのタイトルを表示 */}
+                          {(todo.content.includes('[') && todo.content.includes('](')) ||
                             parseMarkdownLinks(todo.content).includes('<a') ? (
-                              <div
-                                className="task-content"
-                                dangerouslySetInnerHTML={{ __html: parseMarkdownLinks(todo.content) }} // 解析されたリンクを表示
-                                onClick={handleMarkdownLinkClick}
-                                style={{ marginLeft: '5px', fontSize: '19.5px', color: '#555', marginTop: '5px' }} // 小さく表示するためのスタイル
-                              />
-                            ) : null}
-                            {/* ユーザーがテキストを入力するフィールド */}
+                            <div
+                              className="task-content"
+                              dangerouslySetInnerHTML={{ __html: parseMarkdownLinks(todo.content) }}
+                              onClick={handleMarkdownLinkClick}
+                              style={{ marginLeft: '5px', fontSize: '19.5px', color: '#555', marginTop: '5px' }}
+                            />
+                          ) : null}
+                          {/* ユーザーがテキストを入力するフィールド */}
                           <input
                             type="text"
                             disabled={todo.completed || todo.delete_flg}
@@ -391,7 +404,7 @@ const Task: React.FC = () => {
                             onChange={(e) => handleTodo(todo.id, 'content', e.target.value)}
                             className="task-input"
                             style={{
-                              width: '98%', // ここで幅を100%に指定
+                              width: '98%',
                               backgroundColor: todo.completed && todo.progress_rate === 100 ? '#d3d3d3' : '',
                               color: todo.completed && todo.progress_rate === 100 ? '#808080' : '',
                             }}
@@ -411,6 +424,12 @@ const Task: React.FC = () => {
                           style={{ fontSize: '16px', width: '100%', height: '100px', marginTop: '10px' }}
                         />
                       )}
+                      {/* マークダウン表示ボタン */}
+                      {todo.sub_content && (
+                        <button onClick={() => openModal(todo.sub_content ?? '')}>
+                          マークダウン表示
+                        </button>
+                      )}
                     </li>
                   )}
                 </Draggable>
@@ -420,6 +439,82 @@ const Task: React.FC = () => {
           )}
         </Droppable>
       </DragDropContext>
+
+      {/* モーダル部分 */}
+      <Modal isOpen={modalIsOpen} onRequestClose={closeModal} contentLabel="マークダウン内容">
+        <h2>
+          {modalContent && (
+            <div
+              dangerouslySetInnerHTML={{
+                __html: parseMarkdownLinks(
+                  todos.find(t => t.sub_content === modalContent)?.content || ''
+                )
+              }}
+              onClick={handleMarkdownLinkClick}
+              style={{ cursor: 'pointer' }}
+            />
+          )}
+        </h2>
+        {modalContent && (
+          // Update the code block within the modal rendering
+          <ReactMarkdown
+            components={{
+              // リストのスタイル
+              li({ children, ...props }) {
+                return (
+                  <li
+                    {...props}
+                    style={{
+                      display: 'list-item',
+                      listStyleType: 'disc',
+                      paddingLeft: '20px',
+                      marginBottom: '-30px',
+                      fontSize: '15px',
+                      border: 'none', // 枠を消す
+                      boxShadow: 'none', // グレーの影を消す
+                      outline: 'none', // アウトラインを消す
+                      background: 'none', // 背景色を消す
+                    }}
+                  >
+                    {children}
+                  </li>
+                );
+              },
+              code({ inline, className, children, ...props }: React.ComponentPropsWithoutRef<'code'> & { inline?: boolean }) {
+                const match = /language-(\w+)/.exec(className || '');
+                return !inline && match ? (
+                  <SyntaxHighlighter
+                    {...props}
+                    language={match[1]}
+                    style={darcula}
+                    PreTag="div"
+                  >
+                    {String(children).replace(/\n$/, '')}
+                  </SyntaxHighlighter>
+                ) : (
+                  <code
+                    className={className}
+                    style={{
+                      backgroundColor: '#f0f0f0',
+                      fontSize: '17px',
+                      padding: '5px',
+                      borderRadius: '3px',
+                      fontFamily: 'monospace',
+                      display: 'inline-block',
+                    }}
+                    {...props}
+                  >
+                    {children}
+                  </code>
+                );
+              },
+            }}
+          >
+            {modalContent}
+          </ReactMarkdown>
+        )}
+        <button onClick={closeModal}>閉じる</button>
+      </Modal>
     </div>
   );
 };
