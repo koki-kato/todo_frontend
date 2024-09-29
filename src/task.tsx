@@ -20,10 +20,33 @@ const Task: React.FC = () => {
   const [showSubContent, setShowSubContent] = useState<number | null>(null);
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [modalContent, setModalContent] = useState<string | null>(null);
+  const [currentDate, setCurrentDate] = useState<Date>(date ? new Date(date) : new Date()); // 日付の状態を管理
 
-  useEffect(() => {
-    fetchTodos().then(data => setTodos(data)); // 全てのタスクを取得
-  }, []);
+   // 日付が変更されたときにAPIからタスクを取得するuseEffect
+   useEffect(() => {
+    const fetchTodosByDate = async () => {
+      try {
+        const formattedDate = currentDate.toISOString().split('T')[0]; // 日付をフォーマット
+        const response = await fetch(`http://localhost:3001/api/v1/todos?output_date=${formattedDate}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch todos');
+        }
+        const data = await response.json();
+        setTodos(data); // API レスポンスからタスクを設定
+      } catch (error) {
+        console.error("Error fetching todos:", error);
+      }
+    };
+
+    fetchTodosByDate(); // API 呼び出し
+  }, [currentDate]); // currentDate が変更されたときに API を再呼び出し
+
+  const handleDateChange = (days: number) => {
+    const newDate = new Date(currentDate);
+    newDate.setDate(newDate.getDate() + days); // 日付を変更
+    setCurrentDate(newDate); // 日付を状態として保存
+    navigate(`/todos/${newDate.toISOString().split('T')[0]}`); // 新しい日付をURLに反映
+  };
 
   const handleSubmit = () => {
     if (!text) return;
@@ -304,7 +327,10 @@ const Task: React.FC = () => {
   return (
     <div>
       <h1>{date && new Date(date).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })}</h1>
-      <button onClick={handleBackToCalendar}>カレンダーに戻る</button>
+       {/* 日付移動とカレンダーのボタン */}
+       <button className="date-nav-button" onClick={() => handleDateChange(-1)}>前の日</button>
+      <button className="back-to-calendar-button" onClick={handleBackToCalendar}>カレンダーに戻る</button>
+      <button className="date-nav-button" onClick={() => handleDateChange(1)}>次の日</button>
       <Filter filter={filter} onChange={setFilter} />
       <button onClick={exportToExcel} style={{ marginBottom: '20px' }}>エクセルに出力</button>
       {filter === 'delete' ? (
@@ -416,7 +442,7 @@ const Task: React.FC = () => {
                       )}
                       {/* マークダウン表示ボタン */}
                       {todo.sub_content && (
-                        <button onClick={() => openModal(todo.sub_content ?? '')}>
+                        <button className="markdown-button" onClick={() => openModal(todo.sub_content ?? '')}>
                           マークダウン表示
                         </button>
                       )}

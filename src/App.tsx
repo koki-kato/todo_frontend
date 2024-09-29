@@ -12,7 +12,7 @@ const App: React.FC = () => {
     <Router>
       <Routes>
         <Route path="/todos/:date" element={<Task />} />
-        <Route path="/" element={<Calendar />} />
+        <Route path="*" element={<Calendar />} />
       </Routes>
     </Router>
   );
