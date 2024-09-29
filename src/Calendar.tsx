@@ -3,7 +3,7 @@ import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import { fetchTodos, updateTodo } from './api';
-import { Todo } from './task';
+import { Todo } from './types'; // types.tsのパスに応じて調整
 import { useNavigate } from 'react-router-dom';
 import jaLocale from '@fullcalendar/core/locales/ja'; // 日本語ローカルをインポート
 

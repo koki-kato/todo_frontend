@@ -1,5 +1,5 @@
 // src/api.tsx
-import { Todo } from './task';
+import { Todo } from './types';
 
 export const fetchTodos = async (): Promise<Todo[]> => {
   const response = await fetch("http://localhost:3001/api/v1/todos");

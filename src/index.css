@@ -119,7 +119,8 @@ li input[type='checkbox'] {
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  width: 70px;
+  width: 50px;
+  margin-left: 10px;
 }
 
 .delete-button:hover {
@@ -127,14 +128,13 @@ li input[type='checkbox'] {
 }
 
 .toggle-button {
-  background-color: white;
-  color: #fff;
+  background-color: green;
+  color: white;
   width: 50px;
-  margin-left: 9px;
 }
 
 .toggle-button:hover {
-  background-color: #0056b3;
+  background-color: green;
 }
 
 .drag-handle {

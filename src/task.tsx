@@ -6,25 +6,8 @@ import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import Filter from './components/Filter';
 import DOMPurify from 'dompurify';
-import ReactMarkdown from 'react-markdown';
-import Modal from 'react-modal';
-import { darcula } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { PrismAsyncLight as SyntaxHighlighter } from 'react-syntax-highlighter';
-
-export interface Todo {
-  content: string;
-  readonly id: number;
-  completed: boolean;
-  delete_flg: boolean;
-  sort: number;
-  sub_content?: string;
-  output_date: string;
-  progress_rate: number;
-  copy_id: number; // コピーID
-  start_date: string; // 新しい開始日
-  completion_date: string; // 新しい完了予定日
-  completion_date_actual?: string;
-}
+import MarkdownRenderer from './components/MarkdownRenderer';
+import { Todo } from './types'; // types.tsのパスに応じて調整
 
 type Filter = 'all' | 'completed' | 'unchecked' | 'delete';
 
@@ -45,13 +28,19 @@ const Task: React.FC = () => {
   const handleSubmit = () => {
     if (!text) return;
 
+    const defaultSubContent = `
+## 進捗状況
+## 内容
+## 背景
+## 改修点`;
+
     const newTodo: Omit<Todo, 'id'> = {
-      content: text,
+      content: text, // 入力された内容をcontentにセット
       completed: false,
       delete_flg: false,
       sort: todos.length + 1,
       output_date: date || '',
-      sub_content: '',
+      sub_content: defaultSubContent, // デフォルトのsub_contentを設定
       copy_id: Math.floor(Math.random() * 1000000), // コピーIDを生成
       progress_rate: 0, // 初期値として0%を設定
       start_date: date || '', // 新しい開始日
@@ -72,6 +61,7 @@ const Task: React.FC = () => {
       setText('');
     });
   };
+
 
   const getFilteredTodos = () => {
     let filteredTodos = [];
@@ -410,11 +400,11 @@ const Task: React.FC = () => {
                             }}
                           />
                         </div>
+                        <button className="toggle-button" onClick={() => toggleSubContent(todo.id)}>
+                          編集
+                        </button>
                         <button className="delete-button" onClick={() => handleTodo(todo.id, 'delete_flg', !todo.delete_flg)}>
                           {todo.delete_flg ? '復元' : '削除'}
-                        </button>
-                        <button className="toggle-button" onClick={() => toggleSubContent(todo.id)}>
-                          ⏬
                         </button>
                       </div>
                       {showSubContent === todo.id && (
@@ -441,80 +431,13 @@ const Task: React.FC = () => {
       </DragDropContext>
 
       {/* モーダル部分 */}
-      <Modal isOpen={modalIsOpen} onRequestClose={closeModal} contentLabel="マークダウン内容">
-        <h2>
-          {modalContent && (
-            <div
-              dangerouslySetInnerHTML={{
-                __html: parseMarkdownLinks(
-                  todos.find(t => t.sub_content === modalContent)?.content || ''
-                )
-              }}
-              onClick={handleMarkdownLinkClick}
-              style={{ cursor: 'pointer' }}
-            />
-          )}
-        </h2>
-        {modalContent && (
-          // Update the code block within the modal rendering
-          <ReactMarkdown
-            components={{
-              // リストのスタイル
-              li({ children, ...props }) {
-                return (
-                  <li
-                    {...props}
-                    style={{
-                      display: 'list-item',
-                      listStyleType: 'disc',
-                      paddingLeft: '20px',
-                      marginBottom: '-30px',
-                      fontSize: '15px',
-                      border: 'none', // 枠を消す
-                      boxShadow: 'none', // グレーの影を消す
-                      outline: 'none', // アウトラインを消す
-                      background: 'none', // 背景色を消す
-                    }}
-                  >
-                    {children}
-                  </li>
-                );
-              },
-              code({ inline, className, children, ...props }: React.ComponentPropsWithoutRef<'code'> & { inline?: boolean }) {
-                const match = /language-(\w+)/.exec(className || '');
-                return !inline && match ? (
-                  <SyntaxHighlighter
-                    {...props}
-                    language={match[1]}
-                    style={darcula}
-                    PreTag="div"
-                  >
-                    {String(children).replace(/\n$/, '')}
-                  </SyntaxHighlighter>
-                ) : (
-                  <code
-                    className={className}
-                    style={{
-                      backgroundColor: '#f0f0f0',
-                      fontSize: '17px',
-                      padding: '5px',
-                      borderRadius: '3px',
-                      fontFamily: 'monospace',
-                      display: 'inline-block',
-                    }}
-                    {...props}
-                  >
-                    {children}
-                  </code>
-                );
-              },
-            }}
-          >
-            {modalContent}
-          </ReactMarkdown>
-        )}
-        <button onClick={closeModal}>閉じる</button>
-      </Modal>
+      <MarkdownRenderer
+          content={modalContent}
+          isOpen={modalIsOpen}
+          closeModal={closeModal}
+          todos={todos}
+          toggleSubContent={toggleSubContent} // toggleSubContent を渡す
+        />
     </div>
   );
 };
