@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
-import { fetchTodos, createTodo, updateTodo, deleteTodo } from './api';
+import { fetchTodos, createTodo, updateTodo, deleteTodo, uploadImage } from './api';
 import { useParams, useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
@@ -8,6 +8,8 @@ import Filter from './components/Filter';
 import DOMPurify from 'dompurify';
 import MarkdownRenderer from './components/MarkdownRenderer';
 import { Todo } from './types'; // types.tsのパスに応じて調整
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 type Filter = 'all' | 'completed' | 'unchecked' | 'delete';
 
@@ -22,30 +24,33 @@ const Task: React.FC = () => {
   const [modalContent, setModalContent] = useState<string | null>(null);
   const [currentDate, setCurrentDate] = useState<Date>(date ? new Date(date) : new Date()); // 日付の状態を管理
 
-   // 日付が変更されたときにAPIからタスクを取得するuseEffect
-   useEffect(() => {
+  // 日付が変更されたときにAPIからタスクを取得するuseEffect
+  useEffect(() => {
     const fetchTodosByDate = async () => {
       try {
-        const formattedDate = currentDate.toISOString().split('T')[0]; // 日付をフォーマット
-        const response = await fetch(`http://localhost:3001/api/v1/todos?output_date=${formattedDate}`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch todos');
-        }
-        const data = await response.json();
-        setTodos(data); // API レスポンスからタスクを設定
+        const formattedDate = currentDate.toISOString().split('T')[0];
+        const todos = await fetchTodos(formattedDate);
+        setTodos(todos);
       } catch (error) {
         console.error("Error fetching todos:", error);
       }
     };
 
-    fetchTodosByDate(); // API 呼び出し
-  }, [currentDate]); // currentDate が変更されたときに API を再呼び出し
+    fetchTodosByDate();
+  }, [currentDate]);// currentDate が変更されたときに API を再呼び出し
 
-  const handleDateChange = (days: number) => {
+  const handleDateChange = (id: number, field: 'start_date' | 'completion_date', date: Date | null) => {
+    if (date) {
+      const formattedDate = date.toISOString().split('T')[0];
+      handleTodo(id, field, formattedDate);
+    }
+  };
+
+  const handleDateFifChange = (days: number) => {
     const newDate = new Date(currentDate);
-    newDate.setDate(newDate.getDate() + days); // 日付を変更
-    setCurrentDate(newDate); // 日付を状態として保存
-    navigate(`/todos/${newDate.toISOString().split('T')[0]}`); // 新しい日付をURLに反映
+    newDate.setDate(newDate.getDate() + days);
+    setCurrentDate(newDate);
+    navigate(`/task/${newDate.toISOString().split('T')[0]}`);
   };
 
   const handleSubmit = () => {
@@ -55,7 +60,7 @@ const Task: React.FC = () => {
 ## 進捗状況
 ## 内容
 ## 背景
-## 改修点`;
+## 改修内容`;
 
     const newTodo: Omit<Todo, 'id'> = {
       content: text, // 入力された内容をcontentにセット
@@ -234,7 +239,7 @@ const Task: React.FC = () => {
   // Function to export the data to Excel
   const exportToExcel = () => {
     const wsData = [
-      ['', 'タイトル', '開始日', '完了予定日', '完了日', '進捗率', '内容'], // Title row
+      ['', 'タイトル', '開日', '完了予定日', '完了日', '進捗率', '内容'], // Title row
     ];
     console.log(filteredTodosForExcel);
     filteredTodosForExcel.forEach((todo) => {
@@ -324,13 +329,40 @@ const Task: React.FC = () => {
     setModalIsOpen(true);
   };
 
+  const handleDropImage = async (imageFile: File, todoId: number) => {
+    // 画像をtmpフォルダーに移動する処理を追加
+    const formData = new FormData();
+    formData.append('file', imageFile);
+
+    // ここでAPIを呼び出して画像をアップロード
+    const imageUrl = await uploadImage(imageFile); // uploadImageは画像をアップロードし、URLを返すと仮定
+
+    // sub_contentにマークダウン形式で画像を追加
+    const updatedTodo = todos.find(todo => todo.id === todoId);
+    if (updatedTodo) {
+      const newSubContent = `${updatedTodo.sub_content || ''}\n![画像](${imageUrl})`;
+      handleTodo(todoId, 'sub_content', newSubContent);
+    }
+  };
+
+  // ドロップイベントを処理する関数を追加
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>, todoId: number) => {
+    e.preventDefault();
+    const files = Array.from(e.dataTransfer.files);
+    files.forEach(file => {
+      if (file.type.startsWith('image/')) {
+        handleDropImage(file, todoId);
+      }
+    });
+  };
+
   return (
     <div>
       <h1>{date && new Date(date).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })}</h1>
-       {/* 日付移動とカレンダーのボタン */}
-       <button className="date-nav-button" onClick={() => handleDateChange(-1)}>前の日</button>
+      {/* 日付移動とカレンダーのボタン */}
+      <button className="date-nav-button" onClick={() => handleDateFifChange(-1)}>前の日</button>
       <button className="back-to-calendar-button" onClick={handleBackToCalendar}>カレンダーに戻る</button>
-      <button className="date-nav-button" onClick={() => handleDateChange(1)}>次の日</button>
+      <button className="date-nav-button" onClick={() => handleDateFifChange(1)}>次の日</button>
       <Filter filter={filter} onChange={setFilter} />
       <button onClick={exportToExcel} style={{ marginBottom: '20px' }}>エクセルに出力</button>
       {filter === 'delete' ? (
@@ -384,21 +416,26 @@ const Task: React.FC = () => {
                         </div>
                         <div className="div-container">
                           <label htmlFor={`start-date-${todo.id}`} style={{ fontSize: '12px' }}>開始日</label>
-                          <input
-                            type="date"
+                          <DatePicker
                             id={`start-date-${todo.id}`}
-                            value={todo.start_date}
-                            onChange={(e) => handleTodo(todo.id, 'start_date', e.target.value)}
-                            min={todo.output_date} // 開始日がoutput_dateより前に設定できないようにする
+                            selected={todo.start_date ? new Date(todo.start_date) : null}
+                            onChange={(date: Date | null) => handleDateChange(todo.id, 'start_date', date)}
+                            minDate={new Date(todo.output_date)}
+                            dateFormat="yyyy/MM/dd"
+                            isClearable={false}
+                            readOnly={false}
+                            onChangeRaw={(e: any) => e.preventDefault()}
                           />
                           <label htmlFor={`completion-date-${todo.id}`} style={{ fontSize: '12px' }}>完了予定日</label>
-                          <input
-                            type="date"
+                          <DatePicker
                             id={`completion-date-${todo.id}`}
-                            value={todo.completion_date}
-                            onChange={(e) => handleTodo(todo.id, 'completion_date', e.target.value)}
-                            min={todo.start_date || todo.output_date} // 完了予定日が開始日またはoutput_dateより前に設定できないようにする
-                            style={{ marginBottom: '12px' }}
+                            selected={todo.completion_date ? new Date(todo.completion_date) : null}
+                            onChange={(date: Date | null) => handleDateChange(todo.id, 'completion_date', date)}
+                            minDate={new Date(todo.start_date || todo.output_date)}
+                            dateFormat="yyyy/MM/dd"
+                            isClearable={false}
+                            readOnly={false}
+                            onChangeRaw={(e: any) => e.preventDefault()}
                           />
                         </div>
                         <div className="input-content">
@@ -434,11 +471,23 @@ const Task: React.FC = () => {
                         </button>
                       </div>
                       {showSubContent === todo.id && (
-                        <textarea
-                          value={todo.sub_content || ''}
-                          onChange={(e) => handleTodo(todo.id, 'sub_content', e.target.value)}
-                          style={{ fontSize: '16px', width: '100%', height: '100px', marginTop: '10px' }}
-                        />
+                        <div
+                          onDrop={(e) => handleDrop(e, todo.id)}
+                          onDragOver={(e) => e.preventDefault()} // ドラッグオーバー時にデフォルトの動作を防ぐ
+                          style={{ border: '1px dashed #ccc', padding: '10px', width: '100%' }} // 親要素の幅を100%に指定
+                        >
+                          <textarea
+                            value={todo.sub_content || ''}
+                            onChange={(e) => handleTodo(todo.id, 'sub_content', e.target.value)}
+                            style={{ 
+                              fontSize: '16px', 
+                              width: '100%',  // 親要素に応じた幅を確保
+                              height: '150px', // 高さを固定値に設定
+                              marginTop: '10px', 
+                              boxSizing: 'border-box' // パディングを含めたサイズ調整
+                            }}
+                          />
+                        </div>                      
                       )}
                       {/* マークダウン表示ボタン */}
                       {todo.sub_content && (
@@ -458,12 +507,12 @@ const Task: React.FC = () => {
 
       {/* モーダル部分 */}
       <MarkdownRenderer
-          content={modalContent}
-          isOpen={modalIsOpen}
-          closeModal={closeModal}
-          todos={todos}
-          toggleSubContent={toggleSubContent} // toggleSubContent を渡す
-        />
+        content={modalContent}
+        isOpen={modalIsOpen}
+        closeModal={closeModal}
+        todos={todos}
+        toggleSubContent={toggleSubContent} // toggleSubContent を渡す
+      />
     </div>
   );
 };

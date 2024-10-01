@@ -1,15 +1,60 @@
 /* MarkdownRenderer.module.css */
+
+h1, h2, h3, h4, h5, h6 {
+  border-bottom: 1px solid #d3d3d3; /* 薄いグレーのボーダーを追加 */
+  padding-bottom: 10px; /* テキストとボーダーの間にスペースを追加 */
+  margin-bottom: 20px; /* ボーダーと次の要素との間隔を追加 */
+}
+
+h1 {
+  font-size: 2em;
+}
+
+h2 {
+  font-size: 1.75em;
+}
+
+h3 {
+  font-size: 1.5em;
+}
+
+h4 {
+  font-size: 1.25em;
+}
+
+h5 {
+  font-size: 1em;
+}
+
+h6 {
+  font-size: 0.875em;
+}
+
+p {
+  margin-bottom: 20px;
+}
+
+ul {
+  margin-bottom: 20px;
+}
+
+ol {
+  margin-bottom: 20px;
+}
+
 .listItem {
   display: list-item;
   list-style-type: disc;
-  padding-left: 20px;
-  margin-bottom: -30px;
+  list-style-position: inside; /* マーカーをテキストの内側に配置 */
+  padding-left: 10px; /* パディングを小さくしてマーカーとの距離を減らす */
+  margin-bottom: -20px;
   font-size: 15px;
   border: none;
   box-shadow: none;
   outline: none;
   background: none;
 }
+
 
 .inlineCode {
   background-color: #f0f0f0;
@@ -18,6 +63,7 @@
   border-radius: 3px;
   font-family: monospace;
   display: inline-block;
+  width: 95%;
 }
 
 .buttonContainer {

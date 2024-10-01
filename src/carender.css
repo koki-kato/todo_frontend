@@ -1,9 +1,13 @@
 /* カレンダー全体のスタイル */
 .fc {
-  background-color: #f9f9f9; /* 柔らかいグレーの背景色 */
-  border-radius: 12px; /* 角を丸くして、アプリっぽく */
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 柔らかいシャドウ */
-  padding: 10px; /* 内側に余白を追加 */
+  background-color: #f9f9f9;
+  /* 柔らかいグレーの背景色 */
+  border-radius: 12px;
+  /* 角を丸くして、アプリっぽく */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  /* 柔らかいシャドウ */
+  padding: 10px;
+  /* 内側に余白を追加 */
   width: 100%;
 }
 
@@ -32,14 +36,16 @@
 }
 
 .fc-daygrid-day-frame:hover {
-  background-color: #f0f8ff; /* マウスオーバー時に淡いブルーに */
+  background-color: #f0f8ff;
+  /* マウスオーバー時に淡いブルーに */
 }
 
 /* イベントのスタイル */
 .fc-event {
   /* background-color: #039be5; 明るい黄色の背景 */
-  background-color: white; 
-  color: #ffffff; /* 文字色を濃いグレーに */
+  background-color: white;
+  color: #ffffff;
+  /* 文字色を濃いグレーに */
   border-radius: 5px;
   padding: 3px 5px;
   font-size: 12px;
@@ -56,35 +62,43 @@
   overflow: hidden;
   right: 0px;
   vertical-align: top;
-  color: black; /* 文字色を濃いグレーに */
+  color: black;
+  /* 文字色を濃いグレーに */
 }
 
 .fc-h-event {
-  border: none; /* 枠線を無効化 */
+  border: none;
+  /* 枠線を無効化 */
 }
 
 /* 今日の日付に薄いハイライトをつける */
 .fc-day-today {
-  background-color: rgba(0, 128, 128, 0.1); /* 薄いシアン色の背景を今日の日付に適用 */
-  border-color: #0B8043; /* 緑色の境界線を追加 */
+  background-color: rgba(0, 128, 128, 0.1);
+  /* 薄いシアン色の背景を今日の日付に適用 */
+  border-color: #0B8043;
+  /* 緑色の境界線を追加 */
 }
 
 
 .fc-h-event .fc-event-main {
-  font-size: 12px; /* お好みのサイズに調整 */
-  color: black;    /* テキスト色を黒に設定 */
+  font-size: 12px;
+  /* お好みのサイズに調整 */
+  color: black;
+  /* テキスト色を黒に設定 */
 }
 
 /* 今日の日付セルのスタイル */
 .fc-day-today {
-  background-color: #ffe4e1; /* ピンク色で強調 */
+  background-color: #ffe4e1;
+  /* ピンク色で強調 */
   border-radius: 8px;
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
 }
 
 /* 日付番号のスタイル */
 .fc .fc-daygrid-day-number {
-  color: #666; /* 日付番号の色をグレーに */
+  color: #666;
+  /* 日付番号の色をグレーに */
   font-size: 14px;
   font-weight: bold;
   margin-bottom: 5px;
@@ -92,7 +106,8 @@
 
 /* ボタンのスタイル */
 .fc-button {
-  background-color: #ffcc80; /* オレンジ色のボタン */
+  background-color: #ffcc80;
+  /* オレンジ色のボタン */
   border: none;
   border-radius: 5px;
   color: #fff;
@@ -103,17 +118,22 @@
 }
 
 .fc-button:hover {
-  background-color: #ffa726; /* マウスオーバー時に少し濃いオレンジに */
+  background-color: #ffa726;
+  /* マウスオーバー時に少し濃いオレンジに */
 }
 
 .fc-event {
-  outline: none; /* フォーカス時のアウトラインを無効化 */
+  outline: none;
+  /* フォーカス時のアウトラインを無効化 */
 }
 
 .input-content {
   width: 80%;
   display: flex;
-  flex-direction: column; /* 子要素を縦に並べる */
-  align-items: flex-start; /* 子要素を左揃えにする（必要に応じて調整） */
-  margin-bottom: 10px; /* 下に余白を追加 */
+  flex-direction: column;
+  /* 子要素を縦に並べる */
+  align-items: flex-start;
+  /* 子要素を左揃えにする（必要に応じて調整） */
+  margin-bottom: 10px;
+  /* 下に余白を追加 */
 }

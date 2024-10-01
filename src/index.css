@@ -103,14 +103,16 @@ div .input-container {
 li input[type='text'] {
   flex-grow: 1;
   margin-right: 1em;
-  border: 1px solid #ccc; /* ボーダーを追加 */
-  border-radius: 5px; /* ボーダーの角を丸く */
-  background: #fff; /* 背景色を白に設定 */
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background: #fff;
   outline: none;
   width: 70%;
-  font-size: 1.2em; /* フォントサイズを大きく */
-  padding: 0.5em; /* パディングを追加 */
-  box-sizing: border-box; /* パディングとボーダーを含む */
+  font-size: 1.2em;
+  padding: 0.5em;
+  box-sizing: border-box;
+  height: 35px;
+  font-size: 18px;
 }
 
 .delete-button, .toggle-button {
