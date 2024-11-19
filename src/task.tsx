@@ -23,6 +23,7 @@ const Task: React.FC = () => {
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [modalContent, setModalContent] = useState<string | null>(null);
   const [currentDate, setCurrentDate] = useState<Date>(date ? new Date(date) : new Date()); // 日付の状態を管理
+  const [selectedTodo, setSelectedTodo] = useState<Todo | null>(null); // 選択されたTodoを管理
 
   // 日付が変更されたときにAPIからタスクを取得するuseEffect
   useEffect(() => {
@@ -324,8 +325,9 @@ const Task: React.FC = () => {
     setModalContent(null);
   };
 
-  const openModal = (content: string) => {
+  const openModal = (content: string, todo: Todo) => {
     setModalContent(content);
+    setSelectedTodo(todo);
     setModalIsOpen(true);
   };
 
@@ -479,19 +481,19 @@ const Task: React.FC = () => {
                           <textarea
                             value={todo.sub_content || ''}
                             onChange={(e) => handleTodo(todo.id, 'sub_content', e.target.value)}
-                            style={{ 
-                              fontSize: '16px', 
+                            style={{
+                              fontSize: '16px',
                               width: '100%',  // 親要素に応じた幅を確保
                               height: '150px', // 高さを固定値に設定
-                              marginTop: '10px', 
+                              marginTop: '10px',
                               boxSizing: 'border-box' // パディングを含めたサイズ調整
                             }}
                           />
-                        </div>                      
+                        </div>
                       )}
                       {/* マークダウン表示ボタン */}
                       {todo.sub_content && (
-                        <button className="markdown-button" onClick={() => openModal(todo.sub_content ?? '')}>
+                        <button className="markdown-button" onClick={() => openModal(todo.sub_content ?? '', todo)}>
                           マークダウン表示
                         </button>
                       )}
@@ -507,11 +509,12 @@ const Task: React.FC = () => {
 
       {/* モーダル部分 */}
       <MarkdownRenderer
-        content={modalContent}
+        title={modalContent}
+        sub_content={selectedTodo?.content ?? null}
         isOpen={modalIsOpen}
         closeModal={closeModal}
-        todos={todos}
-        toggleSubContent={toggleSubContent} // toggleSubContent を渡す
+        parseMarkdownLinks={parseMarkdownLinks}
+        handleMarkdownLinkClick={handleMarkdownLinkClick}
       />
     </div>
   );

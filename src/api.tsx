@@ -53,16 +53,24 @@ export const uploadImage = async (file: File): Promise<string> => {
   const formData = new FormData();
   formData.append('image', file);
 
-  const response = await fetch(`${API_BASE_URL}/api/v1/upload`, {
-    method: "POST",
-    body: formData,
-  });
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/v1/upload`, {
+      method: "POST",
+      body: formData,
+    });
 
-  if (!response.ok) {
-    throw new Error('画像のアップロードに失敗しました');
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Upload failed:', errorText);
+      throw new Error('画像のアップロードに失敗しました');
+    }
+
+    const data = await response.json();
+    console.log('Upload response:', data); // レスポンスを確認
+    return data.url;
+  } catch (error) {
+    console.error('画像アップロードエラー:', error);
+    throw error;
   }
-
-  const data = await response.json();
-  console.log('Upload response:', data); // ここで画像URLが正しいか確認
-  return data.url; // 画像URLを返す
 };
+
