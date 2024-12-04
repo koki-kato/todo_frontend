@@ -137,3 +137,8 @@
   margin-bottom: 10px;
   /* 下に余白を追加 */
 }
+
+.fc-scroller.fc-scroller-liquid-absolute {
+  overflow: hidden !important;
+  /* スクロールバーを非表示 */
+}
