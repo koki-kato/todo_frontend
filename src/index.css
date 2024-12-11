@@ -3,43 +3,44 @@ body, html {
   height: 100%;
   width: 100%;
   margin: 0;
-  font-family: 'Arial', sans-serif;
-  background-color: #f0f0f0; /* 微妙なグレーの背景色 */
+  font-family: 'Arial', sans-serif; /* フォントはそのまま */
+  background-color: #fdfdff; /* 明るい背景色 */
 }
 
-
 #root {
-  max-width: 1300px; /* 最大幅を1600pxに拡大 */
+  max-width: 1500px;
   margin: 0 auto;
   padding: 2rem;
   text-align: center;
 }
 
-
-.todo-container {
-  background-color: #d3d3d3;
+.task-container {
+  background: #fffbf7;
   padding: 2em;
   border-radius: 10px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   width: 100%; /* 幅を100%に設定 */
-  max-width: 1200px; /* 最大幅を1200pxに設定 */
+  max-width: 1100px; /* 最大幅を1200pxに設定 */
   margin: 1em; /* 中央寄せ */
   box-sizing: border-box; /* パディングとボーダーを含む */
 }
 
-
 select, input[type='text'], button[type='submit'] {
-  width: 95%;
+  width: 100%;
   margin: 0.5em 0;
   padding: 0.75em; /* パディングを大きく */
   font-size: 1.2em; /* フォントサイズを大きく */
-  border: 1px solid #ccc;
+  border: 2px solid #ffe0b5; /* 優しい色合いのボーダー */
   border-radius: 5px;
 }
 
+input[type='text']:focus, select:focus {
+  border-color: #ffaf00; /* フォーカス時の色 */
+  box-shadow: 0 4px 12px rgba(255, 175, 0, 0.5); /* フォーカス時のシャドウ */
+}
 
 button[type='submit'] {
-  background-color: #007BFF;
+  background-color: #ffaf00; /* 明るい黄色 */
   color: #fff;
   border: none;
   cursor: pointer;
@@ -49,69 +50,168 @@ button[type='submit'] {
   padding: 0.5em 1em;
 }
 
-
 button[type='submit']:hover {
-  background-color: #0056b3;
+  background-color: #ff9000;
 }
-
 
 ul {
   list-style: none;
   padding: 0;
-  width: 100%; /* 幅を100%に設定 */
+  width: 100%;
 }
-
 
 li {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: #f9f9f9;/* 背景色を白に設定 */
+  flex-direction: column;
+  align-items: flex-start;
+  background: #fff0e6; /* 柔らかいオレンジ */
   padding: 1em; /* パディングを大きく */
   margin: 1em 0; /* マージンを大きく */
   border-radius: 5px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* リストアイテムのシャドウを追加 */
   width: 100%; /* 幅を100%に設定 */
   box-sizing: border-box; /* パディングとボーダーを含む */
+  height: 80%;
 }
 
+div .input-container {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* タスクのタイトルを整える*/
+.div-container {
+  display: flex;
+  margin-right: 5px;
+  flex-direction: column;
+  gap: 1px; /* ラベルと入力フィールドの間にスペースを設ける */
+}
+
+.date-container label {
+  font-size: 10px;
+}
+
+.date-container input[type='date'] {
+  width: 90px; /* 日付入力フィールドの幅を調整 */
+  padding: 5px;
+  height: 10px;
+  font-size: 14px;
+}
 
 li input[type='text'] {
   flex-grow: 1;
   margin-right: 1em;
-  border: 1px solid #ccc; /* ボーダーを追加 */
-  border-radius: 5px; /* ボーダーの角を丸く */
-  background: #fff; /* 背景色を白に設定 */
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background: #fff;
   outline: none;
-  font-size: 1.2em; /* フォントサイズを大きく */
-  padding: 0.5em; /* パディングを追加 */
-  box-sizing: border-box; /* パディングとボーダーを含む */
+  width: 70%;
+  font-size: 1.2em;
+  padding: 0.5em;
+  box-sizing: border-box;
+  height: 35px;
+  font-size: 18px;
 }
 
-
-li input[type='checkbox'] {
-  margin-right: 1em;
-  transform: scale(1.5); /* チェックボックスを大きく */
-}
-
-
-li button {
-  padding: 0.3em 0.6em; 
-  background-color: #dc3545;
+.delete-button, .toggle-button {
+  padding: 0.3em 0.6em;
+  background-color: #ff8a80;
   color: #fff;
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  width: 100px;
+  width: 50px;
+  margin-left: 10px;
+}
+
+.delete-button:hover {
+  background-color: #ff5a52; /* ホバー時に濃い赤 */
+}
+
+.toggle-button {
+  background-color: #4db6ac; /* 優しい緑 */
+  color: white;
+  width: 50px;
+}
+
+.toggle-button:hover {
+  background-color: #009688; /* ホバー時に濃い緑 */
+}
+
+.drag-handle {
+  display: inline-block;
+  padding: 0.5em;
+  margin-right: 10px;
+  background: #ffecb3; /* 明るい黄色 */
+  border-radius: 5px;
+  cursor: grab;
+}
+
+/* マークダウン表示ボタン */
+button.markdown-button {
+  margin-top: 10px;
+  background-color: #ffaf00; /* 他のボタンと同じ色 */
+  color: white;
+  border: none;
+  padding: 0.5em 1em;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 1em; /* フォントサイズ */
+}
+
+button.markdown-button:hover {
+  background-color: #ff9000; /* ホバー時に濃いオレンジ */
+  box-shadow: 0 6px 15px rgba(255, 144, 0, 0.5); /* ホバー時のシャドウ効果 */
+}
+
+/* モーダルの全体のスタイルを調整 */
+.custom-modal {
+  width: 50%; /* モーダルの幅を調整 */
+  height: 50%; /* モーダルの高さを調整 */
+  max-width: 600px; /* 最大幅を設定 */
+  max-height: 400px; /* 最大高さを設定 */
+  margin: auto;
+  padding: 20px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.actions-container {
+  display: flex;
+  justify-content: space-between; /* 要素を左右に配置 */
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.duplicate-button {
+  margin-left: auto; /* これが右寄せのためのスタイル */
 }
 
 
-li button:hover {
-  background-color: #c82333;
+/* 日付移動ボタン、カレンダーに戻るボタン、エクセル出力ボタンなどのスタイル */
+button.date-nav-button,
+button.excel-export-button,
+button.back-to-calendar-button,
+button.empty-trash-button {
+  background-color: #ffaf00; /* 可愛い色合い */
+  color: white;
+  border: none;
+  padding: 0.7em 1.5em;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 1.2em; /* フォントサイズ */
+  margin: 0 10px; /* ボタン同士の間隔 */
 }
 
-
-button[disabled] {
-  background-color: #ccc;
-  cursor: not-allowed;
+button.date-nav-button:hover,
+button.excel-export-button:hover,
+button.back-to-calendar-button:hover,
+button.empty-trash-button:hover {
+  background-color: #ff9000; /* ホバー時に濃いオレンジ */
+  box-shadow: 0 6px 15px rgba(255, 144, 0, 0.5); /* ホバー時のシャドウ効果 */
 }
